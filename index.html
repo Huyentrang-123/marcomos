@@ -455,7 +455,7 @@ const formatDT = (iso) => {
   return new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
 };
 
-const KOC_STATUSES = ['Gửi mail', 'Nhắn tin IG', 'Đang trao đổi', 'Đồng ý hợp tác', 'Đã xong', 'Không hợp tác'];
+const KOC_STATUSES = ['Chưa liên hệ', 'Gửi mail', 'Nhắn tin IG', 'Đang trao đổi', 'Đồng ý hợp tác', 'Đã xong', 'Không hợp tác'];
 
 function kocBadgeClass(status) {
   if (status === 'Gửi mail')          return 'koc-badge koc-badge-guimail';
