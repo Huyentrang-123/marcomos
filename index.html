@@ -495,9 +495,13 @@ function useFirestoreCol(col) {
 
 /* ── GEMINI TRANSLATION API ── */
 async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
-  const prompt = direction === 'tw_to_vi'
-    ? `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Trung phồn thể (Đài Loan) sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi", tránh dùng từ quá trang trọng). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`
-    : `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Trung phồn thể (Đài Loan, dùng phồn thể 繁體中文). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`;
+  const prompts = {
+    tw_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Trung phồn thể (Đài Loan) sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi", tránh dùng từ quá trang trọng). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    vi_to_tw: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Trung phồn thể (Đài Loan, dùng phồn thể 繁體中文). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    id_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Indonesia sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi"). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    vi_to_id: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Indonesia tự nhiên. Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+  };
+  const prompt = prompts[direction] || prompts.tw_to_vi;
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
@@ -1033,14 +1037,14 @@ function APISettings({ apiKey, onSave }) {
   );
 }
 
-function TemplateList({ templates, onUse, db }) {
+function TemplateList({ templates, onUse, db, collection }) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
 
   const startEdit = (t) => { setEditingId(t.id); setEditName(t.name); };
   const saveEdit = (id) => {
-    if (editName.trim()) db.collection('templates').doc(id).update({ name: editName.trim() });
+    if (editName.trim()) db.collection(collection).doc(id).update({ name: editName.trim() });
     setEditingId(null);
   };
 
@@ -1069,7 +1073,7 @@ function TemplateList({ templates, onUse, db }) {
                 ? <button className="btn btn-primary btn-sm" onClick={() => saveEdit(t.id)}>Lưu</button>
                 : <button className="btn btn-secondary btn-sm" onClick={() => onUse(t.content)}>Dùng</button>
               }
-              <button className="btn btn-danger btn-sm btn-icon" onClick={() => db.collection('templates').doc(t.id).delete()}>&#128465;</button>
+              <button className="btn btn-danger btn-sm btn-icon" onClick={() => db.collection(collection).doc(t.id).delete()}>&#128465;</button>
             </div>
           ))}
         </div>
@@ -1078,10 +1082,24 @@ function TemplateList({ templates, onUse, db }) {
   );
 }
 
-function TranslationTab({ mode }) {
-  const [apiKey, setApiKey] = useLocalStorage('marcomos_api_key', '');
-  const [translations, loadingTrans] = useFirestoreCol('translations');
-  const [templates, loadingTpl] = useFirestoreCol('templates');
+const TRANSLATION_GROUPS = [
+  { id: 'tw', icon: '🇹🇼', label: 'Đài Loan', histCol: 'translations', tplCol: 'templates',
+    defaultDir: 'tw_to_vi', swapDir: { tw_to_vi: 'vi_to_tw', vi_to_tw: 'tw_to_vi' },
+    srcFlag: '🇹🇼', tgtFlag: '🇻🇳',
+    dirLabels: { tw_to_vi: { title: 'Dịch Đài Loan → Việt Nam', src: 'Tiếng Trung (Đài Loan)', tgt: 'Tiếng Việt', srcPh: 'Dán văn bản tiếng Trung vào đây...' },
+                 vi_to_tw: { title: 'Dịch Việt Nam → Đài Loan', src: 'Tiếng Việt', tgt: 'Tiếng Trung (Đài Loan)', srcPh: 'Dán văn bản tiếng Việt vào đây...' } }
+  },
+  { id: 'id', icon: '🇮🇩', label: 'Indonesia', histCol: 'translations_indo', tplCol: 'templates_indo',
+    defaultDir: 'id_to_vi', swapDir: { id_to_vi: 'vi_to_id', vi_to_id: 'id_to_vi' },
+    srcFlag: '🇮🇩', tgtFlag: '🇻🇳',
+    dirLabels: { id_to_vi: { title: 'Dịch Indonesia → Việt Nam', src: 'Tiếng Indonesia', tgt: 'Tiếng Việt', srcPh: 'Dán văn bản tiếng Indonesia vào đây...' },
+                 vi_to_id: { title: 'Dịch Việt Nam → Indonesia', src: 'Tiếng Việt', tgt: 'Tiếng Indonesia', srcPh: 'Dán văn bản tiếng Việt vào đây...' } }
+  },
+];
+
+function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
+  const [translations, loadingTrans] = useFirestoreCol(group.histCol);
+  const [templates, loadingTpl] = useFirestoreCol(group.tplCol);
   const [source, setSource] = useState('');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
@@ -1090,12 +1108,13 @@ function TranslationTab({ mode }) {
   const [histSearch, setHistSearch] = useState('');
   const [tplName, setTplName] = useState('');
   const [showTplSave, setShowTplSave] = useState(false);
-  const [direction, setDirection] = useState('tw_to_vi');
+  const [direction, setDirection] = useState(group.defaultDir);
 
   const canTranslate = source.trim() && (mode === 'proxy' || apiKey);
+  const dirLabel = group.dirLabels[direction] || Object.values(group.dirLabels)[0];
 
   const swapDirection = () => {
-    setDirection(d => d === 'tw_to_vi' ? 'vi_to_tw' : 'tw_to_vi');
+    setDirection(d => group.swapDir[d] || group.defaultDir);
     setSource(result); setResult(''); setError('');
   };
 
@@ -1116,13 +1135,13 @@ function TranslationTab({ mode }) {
 
   const saveHistory = () => {
     if (!source || !result) return;
-    db.collection('translations').add({ source, result, createdAt: new Date().toISOString() });
+    db.collection(group.histCol).add({ source, result, createdAt: new Date().toISOString() });
     setSource(''); setResult('');
   };
 
   const saveTemplate = () => {
     if (!tplName.trim() || !source.trim()) return;
-    db.collection('templates').add({ name: tplName.trim(), content: source, createdAt: new Date().toISOString() });
+    db.collection(group.tplCol).add({ name: tplName.trim(), content: source, createdAt: new Date().toISOString() });
     setTplName(''); setShowTplSave(false);
   };
 
@@ -1138,26 +1157,20 @@ function TranslationTab({ mode }) {
         <StatCard label="Đã dịch" value={translations.length} color="accent"/>
         <StatCard label="Templates" value={templates.length}/>
       </div>
-      {mode === 'direct' && <APISettings apiKey={apiKey} onSave={setApiKey}/>}
+      {mode === 'direct' && <APISettings apiKey={apiKey} onSave={onSaveKey}/>}
       <div className="card">
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
-          <div className="card-title" style={{marginBottom:0}}>
-            &#127760; {direction === 'tw_to_vi' ? 'Dịch Đài Loan → Việt Nam' : 'Dịch Việt Nam → Đài Loan'}
-          </div>
+          <div className="card-title" style={{marginBottom:0}}>&#127760; {dirLabel.title}</div>
           <button className="btn btn-secondary btn-sm" onClick={swapDirection} title="Đổi chiều dịch">⇄ Đổi chiều</button>
         </div>
         <div className="translation-grid">
           <div className="translation-panel">
-            <div className="translation-label">
-              {direction === 'tw_to_vi' ? '📥 Tiếng Trung (Đài Loan)' : '📥 Tiếng Việt'}
-            </div>
+            <div className="translation-label">📥 {dirLabel.src}</div>
             <textarea className="form-textarea translation-area" value={source} onChange={e => setSource(e.target.value)}
-              placeholder={direction === 'tw_to_vi' ? 'Dán văn bản tiếng Trung vào đây...' : 'Dán văn bản tiếng Việt vào đây...'}/>
+              placeholder={dirLabel.srcPh}/>
           </div>
           <div className="translation-panel">
-            <div className="translation-label">
-              {direction === 'tw_to_vi' ? '📤 Tiếng Việt' : '📤 Tiếng Trung (Đài Loan)'}
-            </div>
+            <div className="translation-label">📤 {dirLabel.tgt}</div>
             <textarea className="form-textarea translation-area" value={result} onChange={e => setResult(e.target.value)}
               placeholder="Bản dịch sẽ xuất hiện ở đây..." readOnly={loading}/>
           </div>
@@ -1183,7 +1196,7 @@ function TranslationTab({ mode }) {
         )}
       </div>
       {!loadingTpl && templates.length > 0 && (
-        <TemplateList templates={templates} onUse={c => setSource(c)} db={db}/>
+        <TemplateList templates={templates} onUse={c => setSource(c)} db={db} collection={group.tplCol}/>
       )}
       <div className="card">
         <div className="card-title" style={{marginBottom:12}}>&#128220; Lịch sử dịch ({translations.length})</div>
@@ -1202,17 +1215,41 @@ function TranslationTab({ mode }) {
           <div key={t.id} className="history-item">
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
               <div style={{flex:1,minWidth:0}}>
-                <div className="history-source">&#127481;&#127484; {t.source.substring(0,120)}{t.source.length>120?'…':''}</div>
-                <div className="history-result">&#127483;&#127475; {t.result.substring(0,120)}{t.result.length>120?'…':''}</div>
+                <div className="history-source">{group.srcFlag} {t.source.substring(0,120)}{t.source.length>120?'…':''}</div>
+                <div className="history-result">🇻🇳 {t.result.substring(0,120)}{t.result.length>120?'…':''}</div>
                 <div className="history-time">{formatDT(t.createdAt)}</div>
               </div>
               <div style={{display:'flex',gap:4,flexShrink:0}}>
                 <button className="btn btn-secondary btn-sm" onClick={() => { setSource(t.source); setResult(t.result); }}>Dùng lại</button>
-                <button className="btn btn-danger btn-sm btn-icon" onClick={() => db.collection('translations').doc(t.id).delete()}>&#128465;</button>
+                <button className="btn btn-danger btn-sm btn-icon" onClick={() => db.collection(group.histCol).doc(t.id).delete()}>&#128465;</button>
               </div>
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function TranslationTab({ mode }) {
+  const [apiKey, setApiKey] = useLocalStorage('marcomos_api_key', '');
+  const [activeGroup, setActiveGroup] = useLocalStorage('marcomos_trans_group', 'tw');
+  const group = TRANSLATION_GROUPS.find(g => g.id === activeGroup) || TRANSLATION_GROUPS[0];
+
+  return (
+    <div className="content-tab-layout">
+      <aside className="content-sidebar">
+        <div className="content-sidebar-title">Translation</div>
+        {TRANSLATION_GROUPS.map(g => (
+          <div key={g.id} className={`content-sidebar-item${activeGroup===g.id?' active':''}`}
+            onClick={() => setActiveGroup(g.id)}>
+            <span className="content-sidebar-item-icon">{g.icon}</span>
+            {g.label}
+          </div>
+        ))}
+      </aside>
+      <div className="content-main">
+        <TranslationPanel key={group.id} group={group} mode={mode} apiKey={apiKey} onSaveKey={setApiKey}/>
       </div>
     </div>
   );
@@ -1579,7 +1616,7 @@ function App() {
           </button>
         </div>
       </header>
-      <main className={`tab-content${(activeTab==='content'||activeTab==='koc')?' tab-content--full':''}`}>
+      <main className={`tab-content${(activeTab==='content'||activeTab==='koc'||activeTab==='translation')?' tab-content--full':''}`}>
         {activeTab==='koc' && <KOCDatabaseTab/>}
         {activeTab==='translation' && <TranslationTab mode={TRANSLATION_MODE}/>}
         {activeTab==='content' && <ContentTab apiKey={apiKey}/>}
