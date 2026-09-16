@@ -503,7 +503,7 @@ async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
   };
   const prompt = prompts[direction] || prompts.tw_to_vi;
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1339,7 +1339,7 @@ async function analyzeVideoGemini(apiKey, { fileUri, mimeType, youtubeUrl }) {
     parts.push({ file_data: { mime_type: mimeType || 'video/mp4', file_uri: fileUri } });
   }
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts }], generationConfig: { maxOutputTokens: 4096 } }) }
   );
