@@ -1248,7 +1248,7 @@ function TranslationTab({ mode }) {
           </div>
         ))}
       </aside>
-      <div className="content-main">
+      <div className="content-main" style={{maxWidth:'none'}}>
         <TranslationPanel key={group.id} group={group} mode={mode} apiKey={apiKey} onSaveKey={setApiKey}/>
       </div>
     </div>
