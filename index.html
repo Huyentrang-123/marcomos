@@ -522,10 +522,10 @@ async function callGemini(prompt, apiKey, attempt = 0) {
 
 async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
   const prompts = {
-    tw_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Trung phồn thể (Đài Loan) sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi", tránh dùng từ quá trang trọng). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
-    vi_to_tw: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Trung phồn thể (Đài Loan, dùng phồn thể 繁體中文). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
-    id_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Indonesia sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi"). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
-    vi_to_id: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Indonesia tự nhiên. Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    tw_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Trung phồn thể (Đài Loan) sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi", tránh dùng từ quá trang trọng). Tùy ngữ cảnh, hãy thêm emoji phù hợp vào cuối câu hoặc đoạn để cuộc trò chuyện thêm gần gũi, cởi mở (ví dụ: 😊 🤝 💕 ✨ 🙏 v.v.) — chỉ thêm khi tự nhiên, đừng lạm dụng. Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    vi_to_tw: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Trung phồn thể (Đài Loan, dùng phồn thể 繁體中文). Tùy ngữ cảnh, hãy thêm emoji phù hợp để cuộc trò chuyện thêm gần gũi (chỉ thêm khi tự nhiên). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    id_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Indonesia sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi"). Tùy ngữ cảnh, hãy thêm emoji phù hợp vào cuối câu hoặc đoạn để cuộc trò chuyện thêm gần gũi, cởi mở (chỉ thêm khi tự nhiên, đừng lạm dụng). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    vi_to_id: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Indonesia tự nhiên. Tùy ngữ cảnh, hãy thêm emoji phù hợp để cuộc trò chuyện thêm gần gũi (chỉ thêm khi tự nhiên). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
   };
   return callGemini(prompts[direction] || prompts.tw_to_vi, apiKey);
 }
