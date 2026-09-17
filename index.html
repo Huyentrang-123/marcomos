@@ -1181,7 +1181,6 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
           <button className="btn btn-primary btn-lg" onClick={doTranslate} disabled={!canTranslate || loading}>
             {loading ? <><span className="spinner"></span> Đang dịch...</> : '🔄 Dịch'}
           </button>
-          <span style={{fontSize:11,color:'var(--text-secondary)',alignSelf:'center'}}>Ctrl+Enter</span>
           <button className="btn btn-secondary" onClick={doCopy} disabled={!result}>
             {copied ? '✅ Đã sao chép!' : 'Sao chép'}
           </button>
