@@ -1117,9 +1117,24 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
   const [tplName, setTplName] = useState('');
   const [showTplSave, setShowTplSave] = useState(false);
   const [direction, setDirection] = useState(group.defaultDir);
+  const [countdown, setCountdown] = useState(0);
+  const countdownRef = React.useRef(null);
 
-  const canTranslate = source.trim() && (mode === 'proxy' || apiKey);
+  const canTranslate = source.trim() && (mode === 'proxy' || apiKey) && countdown === 0;
   const dirLabel = group.dirLabels[direction] || Object.values(group.dirLabels)[0];
+
+  const startCountdown = (secs) => {
+    setCountdown(secs);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    countdownRef.current = setInterval(() => {
+      setCountdown(s => {
+        if (s <= 1) { clearInterval(countdownRef.current); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  React.useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
 
   const swapDirection = () => {
     setDirection(d => group.swapDir[d] || group.defaultDir);
@@ -1137,13 +1152,21 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
       const retryMatch = msg.match(/retry in ([\d.]+)s/i);
       if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate') || retryMatch) {
         const secs = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 60;
-        setError(`⏳ Đã dùng hết lượt dịch miễn phí trong phút này. Vui lòng chờ ${secs} giây rồi thử lại.`);
+        startCountdown(secs);
+        setError(`⏳ Hết lượt dịch miễn phí trong phút này. Tự động thử lại sau ${secs} giây...`);
       } else {
         setError(msg || 'Dịch thất bại. Vui lòng thử lại.');
       }
     }
     finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    if (countdown === 0 && !loading && error && error.includes('Hết lượt')) {
+      setError('');
+      doTranslate();
+    }
+  }, [countdown]);
 
   const doCopy = () => {
     if (!result) return;
@@ -1193,7 +1216,12 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
               placeholder="Bản dịch sẽ xuất hiện ở đây..." readOnly={loading}/>
           </div>
         </div>
-        {error && <div className="alert alert-danger">{error}</div>}
+        {error && (
+          <div className="alert alert-danger">
+            {error}
+            {countdown > 0 && <span style={{fontWeight:700}}> ({countdown}s)</span>}
+          </div>
+        )}
         <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:4}}>
           <button className="btn btn-primary btn-lg" onClick={doTranslate} disabled={!canTranslate || loading}>
             {loading ? <><span className="spinner"></span> Đang dịch...</> : '🔄 Dịch'}
