@@ -1132,7 +1132,16 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
     try {
       const text = mode === 'proxy' ? await translateProxy(source) : await translateDirect(source, apiKey, direction);
       setResult(text);
-    } catch (e) { setError(e.message || 'Dịch thất bại. Vui lòng thử lại.'); }
+    } catch (e) {
+      const msg = e.message || '';
+      const retryMatch = msg.match(/retry in ([\d.]+)s/i);
+      if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate') || retryMatch) {
+        const secs = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 60;
+        setError(`⏳ Đã dùng hết lượt dịch miễn phí trong phút này. Vui lòng chờ ${secs} giây rồi thử lại.`);
+      } else {
+        setError(msg || 'Dịch thất bại. Vui lòng thử lại.');
+      }
+    }
     finally { setLoading(false); }
   };
 
