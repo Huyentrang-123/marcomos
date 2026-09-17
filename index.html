@@ -495,14 +495,7 @@ function useFirestoreCol(col) {
 }
 
 /* ── GEMINI TRANSLATION API ── */
-async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
-  const prompts = {
-    tw_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Trung phồn thể (Đài Loan) sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi", tránh dùng từ quá trang trọng). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
-    vi_to_tw: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Trung phồn thể (Đài Loan, dùng phồn thể 繁體中文). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
-    id_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Indonesia sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi"). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
-    vi_to_id: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Indonesia tự nhiên. Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
-  };
-  const prompt = prompts[direction] || prompts.tw_to_vi;
+async function callGemini(prompt, apiKey, attempt = 0) {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
     {
@@ -516,10 +509,25 @@ async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
   );
   if (!res.ok) {
     const e = await res.json().catch(() => ({}));
+    const isOverload = res.status === 503 || (e.error?.message || '').toLowerCase().includes('high demand');
+    if (isOverload && attempt < 3) {
+      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+      return callGemini(prompt, apiKey, attempt + 1);
+    }
     throw new Error(e.error?.message || `Lỗi API: ${res.status}`);
   }
   const d = await res.json();
   return d.candidates[0].content.parts[0].text;
+}
+
+async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
+  const prompts = {
+    tw_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Trung phồn thể (Đài Loan) sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi", tránh dùng từ quá trang trọng). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    vi_to_tw: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Trung phồn thể (Đài Loan, dùng phồn thể 繁體中文). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    id_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Indonesia sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi"). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    vi_to_id: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Indonesia tự nhiên. Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+  };
+  return callGemini(prompts[direction] || prompts.tw_to_vi, apiKey);
 }
 
 async function translateProxy(text) {
