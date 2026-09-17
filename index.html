@@ -1168,7 +1168,8 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
           <div className="translation-panel">
             <div className="translation-label">📥 {dirLabel.src}</div>
             <textarea className="form-textarea translation-area" value={source} onChange={e => setSource(e.target.value)}
-              placeholder={dirLabel.srcPh}/>
+              placeholder={dirLabel.srcPh}
+              onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); doTranslate(); } }}/>
           </div>
           <div className="translation-panel">
             <div className="translation-label">📤 {dirLabel.tgt}</div>
@@ -1181,6 +1182,7 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
           <button className="btn btn-primary btn-lg" onClick={doTranslate} disabled={!canTranslate || loading}>
             {loading ? <><span className="spinner"></span> Đang dịch...</> : '🔄 Dịch'}
           </button>
+          <span style={{fontSize:11,color:'var(--text-secondary)',alignSelf:'center'}}>Ctrl+Enter</span>
           <button className="btn btn-secondary" onClick={doCopy} disabled={!result}>
             {copied ? '✅ Đã sao chép!' : 'Sao chép'}
           </button>
