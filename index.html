@@ -971,14 +971,14 @@ function KOCPanel({ collection, currency }) {
                         </a>
                       ) : <EditableCell value={k.instagram} onChange={v => handleUpdate(k.id,{instagram:v})}/>}
                     </td>
-                    <td style={{minWidth:160}}><EditableCell value={k.gmail} onChange={v => handleUpdate(k.id,{gmail:v})}/></td>
+                    <td style={{minWidth:120}}><EditableCell value={k.gmail} onChange={v => handleUpdate(k.id,{gmail:v})}/></td>
                     <td style={{minWidth:70}}><EditableCell value={k.followers} onChange={v => handleUpdate(k.id,{followers:v})}/></td>
-                    <td style={{minWidth:150}}><KOCStatusCell value={k.status} onChange={v => handleUpdate(k.id,{status:v})}/></td>
+                    <td style={{minWidth:110}}><KOCStatusCell value={k.status} onChange={v => handleUpdate(k.id,{status:v})}/></td>
                     <td style={{minWidth:90}}><EditableCell value={k.price} onChange={v => handleUpdate(k.id,{price:v})}/></td>
-                    <td style={{minWidth:180}}><EditableCell value={k.notes} onChange={v => handleUpdate(k.id,{notes:v})}/></td>
+                    <td style={{minWidth:120}}><EditableCell value={k.notes} onChange={v => handleUpdate(k.id,{notes:v})}/></td>
                     <td style={{minWidth:160}}><EditableCell value={k.address} onChange={v => handleUpdate(k.id,{address:v})}/></td>
-                    <td style={{minWidth:130}}><EditableCell value={k.bankAccount} onChange={v => handleUpdate(k.id,{bankAccount:v})}/></td>
-                    <td style={{minWidth:140}}>
+                    <td style={{minWidth:190}}><EditableCell value={k.bankAccount} onChange={v => handleUpdate(k.id,{bankAccount:v})}/></td>
+                    <td style={{minWidth:100}}>
                       <ContractLinkCell value={k.contractLink||''} onChange={v => db.collection(collection).doc(k.id).update({contractLink:v})}/>
                     </td>
                     <td style={{whiteSpace:'nowrap',fontSize:12,color:'var(--text-secondary)'}}>{k.lastContact||'&#8211;'}</td>
