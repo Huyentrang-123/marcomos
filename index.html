@@ -510,15 +510,26 @@ async function callGemini(prompt, apiKey, attempt = 0) {
   );
   if (!res.ok) {
     const e = await res.json().catch(() => ({}));
-    const isOverload = res.status === 503 || (e.error?.message || '').toLowerCase().includes('high demand');
+    const msg = e.error?.message || '';
+    const isOverload = res.status === 503 || msg.toLowerCase().includes('high demand') || msg.toLowerCase().includes('overloaded');
+    const isQuota = res.status === 429 || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate');
     if (isOverload && attempt < 3) {
       await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
       return callGemini(prompt, apiKey, attempt + 1);
     }
-    throw new Error(e.error?.message || `Lỗi API: ${res.status}`);
+    if (isQuota) throw new Error(msg || 'Quota exceeded: retry in 60s');
+    throw new Error(msg || `Lỗi API: ${res.status}`);
   }
   const d = await res.json();
-  return d.candidates[0].content.parts[0].text;
+  if (d.promptFeedback?.blockReason) throw new Error(`Nội dung bị chặn: ${d.promptFeedback.blockReason}`);
+  const candidate = d.candidates?.[0];
+  if (!candidate) throw new Error('API không trả về kết quả');
+  const text = candidate.content?.parts?.[0]?.text;
+  if (!text) {
+    const reason = candidate.finishReason || 'unknown';
+    throw new Error(`API trả về rỗng (finishReason: ${reason})`);
+  }
+  return text;
 }
 
 async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
@@ -1391,7 +1402,10 @@ async function analyzeVideoGemini(apiKey, { fileUri, mimeType, youtubeUrl }) {
   );
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || `Lỗi API: ${res.status}`); }
   const data = await res.json();
-  return data.candidates[0].content.parts[0].text;
+  if (data.promptFeedback?.blockReason) throw new Error(`Nội dung bị chặn: ${data.promptFeedback.blockReason}`);
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error(`API trả về rỗng (finishReason: ${data.candidates?.[0]?.finishReason || 'unknown'})`);
+  return text;
 }
 
 function AnalysisResultView({ text }) {
