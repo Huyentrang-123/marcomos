@@ -1131,8 +1131,9 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
   const [direction, setDirection] = useState(group.defaultDir);
   const [countdown, setCountdown] = useState(0);
   const countdownRef = React.useRef(null);
+  const autoRetriedRef = React.useRef(false);
 
-  const canTranslate = source.trim() && (mode === 'proxy' || apiKey) && countdown === 0;
+  const canTranslate = source.trim() && (mode === 'proxy' || apiKey) && countdown === 0 && !loading;
   const dirLabel = group.dirLabels[direction] || Object.values(group.dirLabels)[0];
 
   const startCountdown = (secs) => {
@@ -1158,14 +1159,22 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
     setLoading(true); setError(''); setResult('');
     try {
       const text = mode === 'proxy' ? await translateProxy(source) : await translateDirect(source, apiKey, direction);
+      autoRetriedRef.current = false;
       setResult(text);
     } catch (e) {
       const msg = e.message || '';
       const retryMatch = msg.match(/retry in ([\d.]+)s/i);
-      if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate') || retryMatch) {
+      const isQuota = msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate') || !!retryMatch;
+      if (isQuota) {
         const secs = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 60;
-        startCountdown(secs);
-        setError(`⏳ Hết lượt dịch miễn phí trong phút này. Tự động thử lại sau ${secs} giây...`);
+        if (!autoRetriedRef.current) {
+          autoRetriedRef.current = true;
+          startCountdown(secs);
+          setError(`__auto_retry__Hết lượt dịch miễn phí trong phút này. Tự động thử lại sau ${secs} giây...`);
+        } else {
+          autoRetriedRef.current = false;
+          setError('⏳ Quota vẫn bị giới hạn. Vui lòng đợi 1-2 phút rồi nhấn Dịch lại.');
+        }
       } else {
         setError(msg || 'Dịch thất bại. Vui lòng thử lại.');
       }
@@ -1174,7 +1183,7 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
   };
 
   useEffect(() => {
-    if (countdown === 0 && !loading && error && error.includes('Hết lượt')) {
+    if (countdown === 0 && !loading && error && error.startsWith('__auto_retry__')) {
       setError('');
       doTranslate();
     }
@@ -1230,7 +1239,7 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
         </div>
         {error && (
           <div className="alert alert-danger">
-            {error}
+            ⏳ {error.replace('__auto_retry__', '')}
             {countdown > 0 && <span style={{fontWeight:700}}> ({countdown}s)</span>}
           </div>
         )}
