@@ -1170,10 +1170,10 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
         if (!autoRetriedRef.current) {
           autoRetriedRef.current = true;
           startCountdown(secs);
-          setError(`__auto_retry__Hết lượt dịch miễn phí trong phút này. Tự động thử lại sau ${secs} giây...`);
+          setError(`__auto_retry__Hết lượt trong phút này, thử lại sau ${secs}s. (Chi tiết: ${msg})`);
         } else {
           autoRetriedRef.current = false;
-          setError('⏳ Quota vẫn bị giới hạn. Vui lòng đợi 1-2 phút rồi nhấn Dịch lại.');
+          setError(`Quota vẫn bị giới hạn. Vui lòng đợi rồi thử lại. (Chi tiết: ${msg})`);
         }
       } else {
         setError(msg || 'Dịch thất bại. Vui lòng thử lại.');
