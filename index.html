@@ -1577,27 +1577,34 @@ function VideoAnalysisPanel({ apiKey }) {
                   ✅ YouTube — Gemini phân tích trực tiếp, không cần tải về.
                 </div>
               );
-              if (isTT) return workerUrl ? (
-                <div style={{fontSize:11,color:'var(--success)',marginTop:6}}>
-                  ✅ TikTok — Worker đã cấu hình, sẵn sàng phân tích.
-                </div>
-              ) : (
-                <div style={{fontSize:12,background:'var(--warning-light)',color:'var(--warning-text)',border:'1px solid var(--warning)',borderRadius:'var(--radius-sm)',padding:'8px 12px',marginTop:8}}>
-                  ⚠️ <strong>TikTok</strong> — cần cấu hình Cloudflare Worker để dùng link trực tiếp.<br/>
-                  <span style={{marginTop:4,display:'block',cursor:'pointer',textDecoration:'underline'}}
-                    onClick={() => setShowWorkerSetting(true)}>
-                    👉 Nhấn đây để nhập Worker URL
-                  </span>
-                </div>
-              );
+              if (isTT) {
+                const dlUrl = `https://ssstik.io/#url=${encodeURIComponent(ytUrl.trim())}`;
+                return (
+                  <div style={{fontSize:12,background:'var(--info-light,#eff6ff)',color:'var(--info-text,#1d4ed8)',border:'1px solid var(--info-border,#bfdbfe)',borderRadius:'var(--radius-sm)',padding:'10px 12px',marginTop:8}}>
+                    <strong>TikTok</strong> — trình duyệt không cho phép tải trực tiếp.<br/>
+                    <div style={{marginTop:6,display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+                      <a href={dlUrl} target="_blank" rel="noreferrer"
+                        style={{display:'inline-block',padding:'4px 12px',background:'var(--accent)',color:'#fff',borderRadius:6,textDecoration:'none',fontWeight:600,fontSize:12}}>
+                        ⬇️ Tải video về (SSSTik)
+                      </a>
+                      <span style={{color:'var(--text-muted)',fontSize:11}}>→ sau đó dùng tab <strong>"Tải file lên"</strong></span>
+                    </div>
+                  </div>
+                );
+              }
               if (isFB || isIG) {
                 const name = isFB ? 'Facebook' : 'Instagram';
+                const snapUrl = `https://snapsave.app/?url=${encodeURIComponent(ytUrl.trim())}`;
                 return (
-                  <div style={{fontSize:12,background:'var(--warning-light)',color:'var(--warning-text)',border:'1px solid var(--warning)',borderRadius:'var(--radius-sm)',padding:'8px 12px',marginTop:8}}>
-                    ⚠️ <strong>{name}</strong> yêu cầu đăng nhập để tải video — chưa hỗ trợ tự động.<br/>
-                    <span style={{marginTop:4,display:'block'}}>
-                      👉 Tải video về máy → dùng tab <strong>"Tải file lên"</strong> để phân tích.
-                    </span>
+                  <div style={{fontSize:12,background:'var(--info-light,#eff6ff)',color:'var(--info-text,#1d4ed8)',border:'1px solid var(--info-border,#bfdbfe)',borderRadius:'var(--radius-sm)',padding:'10px 12px',marginTop:8}}>
+                    <strong>{name}</strong> — trình duyệt không cho phép tải trực tiếp.<br/>
+                    <div style={{marginTop:6,display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+                      <a href={snapUrl} target="_blank" rel="noreferrer"
+                        style={{display:'inline-block',padding:'4px 12px',background:'var(--accent)',color:'#fff',borderRadius:6,textDecoration:'none',fontWeight:600,fontSize:12}}>
+                        ⬇️ Tải video về (SnapSave)
+                      </a>
+                      <span style={{color:'var(--text-muted)',fontSize:11}}>→ sau đó dùng tab <strong>"Tải file lên"</strong></span>
+                    </div>
                   </div>
                 );
               }
