@@ -1351,6 +1351,7 @@ async function uploadVideoToGemini(file, apiKey) {
 }
 
 async function fetchTikTokViaWorker(tiktokUrl, workerUrl) {
+  // Step 1: get video URL from Worker
   let res;
   try {
     res = await fetch(workerUrl, {
@@ -1359,20 +1360,23 @@ async function fetchTikTokViaWorker(tiktokUrl, workerUrl) {
       body: JSON.stringify({ url: tiktokUrl })
     });
   } catch (e) {
-    throw new Error(`Không kết nối được tới Worker: ${e.message}`);
+    throw new Error(`Không kết nối Worker: ${e.message}`);
   }
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Lỗi Worker: ${res.status}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.videoUrl) {
+    throw new Error(data.error || `Lỗi Worker: ${res.status}`);
   }
-  let blob;
-  try {
-    blob = await res.blob();
-  } catch (e) {
-    throw new Error(`Tải video thất bại (kết nối bị ngắt): ${e.message}`);
+
+  // Step 2: download video from CDN directly in browser
+  for (const cdnUrl of [data.videoUrl, data.sdUrl].filter(Boolean)) {
+    let vRes;
+    try { vRes = await fetch(cdnUrl); } catch { continue; }
+    if (!vRes.ok) continue;
+    let blob;
+    try { blob = await vRes.blob(); } catch { continue; }
+    if (blob && blob.size > 0) return new File([blob], 'tiktok-video.mp4', { type: 'video/mp4' });
   }
-  if (!blob || blob.size === 0) throw new Error('Video trả về rỗng — Worker có thể bị timeout');
-  return new File([blob], 'tiktok-video.mp4', { type: 'video/mp4' });
+  throw new Error('Không tải được video từ CDN. Thử tải file MP4 thủ công rồi dùng "Tải file lên".');
 }
 
 async function waitForGeminiFile(fileName, apiKey) {
