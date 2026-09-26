@@ -1350,32 +1350,23 @@ async function uploadVideoToGemini(file, apiKey) {
   return data.file;
 }
 
-async function fetchTikTokVideo(tiktokUrl) {
-  const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(tiktokUrl)}&hd=1`;
+async function fetchTikTokViaWorker(tiktokUrl, workerUrl) {
   let res;
   try {
-    res = await fetch(apiUrl);
+    res = await fetch(workerUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: tiktokUrl })
+    });
   } catch {
-    throw new Error('Không kết nối được tới tikwm.com. Hãy tải video về máy rồi dùng tab "Tải file lên".');
+    throw new Error('Không kết nối được tới Worker. Kiểm tra lại URL Worker trong cài đặt.');
   }
-  if (!res.ok) throw new Error(`TikTok API lỗi: ${res.status}`);
-  const data = await res.json();
-  if (data.code !== 0) throw new Error(data.msg || 'Không lấy được thông tin video TikTok');
-  const videoId = data.data.id;
-  const title = data.data.title || 'tiktok-video';
-  // Dùng CDN của tikwm.com thay vì TikTok CDN (tránh bị CORS chặn)
-  const downloadUrl = videoId
-    ? `https://www.tikwm.com/video/media/hdplay/${videoId}.mp4`
-    : (data.data.hdplay || data.data.play);
-  let videoRes;
-  try {
-    videoRes = await fetch(downloadUrl);
-  } catch {
-    throw new Error('Không tải được video (bị CORS chặn). Hãy tải video về máy rồi dùng tab "Tải file lên".');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Lỗi Worker: ${res.status}`);
   }
-  if (!videoRes.ok) throw new Error(`Tải video thất bại (${videoRes.status}). Hãy dùng tab "Tải file lên".`);
-  const blob = await videoRes.blob();
-  return new File([blob], `${title.substring(0,40)}.mp4`, { type: 'video/mp4' });
+  const blob = await res.blob();
+  return new File([blob], 'tiktok-video.mp4', { type: 'video/mp4' });
 }
 
 async function waitForGeminiFile(fileName, apiKey) {
@@ -1461,6 +1452,9 @@ function VideoAnalysisPanel({ apiKey }) {
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [analyses, loadingAna] = useFirestoreCol('analyses');
+  const [workerUrl, setWorkerUrl] = useLocalStorage('marcomos_tiktok_worker', '');
+  const [showWorkerSetting, setShowWorkerSetting] = useState(false);
+  const [workerInput, setWorkerInput] = useState('');
   const fileInputRef = React.useRef(null);
 
   const busy = status && status !== 'done' && status !== 'error';
@@ -1468,7 +1462,7 @@ function VideoAnalysisPanel({ apiKey }) {
   const isYT = urlVal.includes('youtube.com') || urlVal.includes('youtu.be');
   const isTT = urlVal.includes('tiktok.com');
   const isFBIG = urlVal.includes('facebook.com') || urlVal.includes('fb.watch') || urlVal.includes('instagram.com');
-  const canAnalyze = apiKey && !busy && (inputMode === 'url' ? (ytUrl.trim() && !isFBIG && !isTT) : !!file);
+  const canAnalyze = apiKey && !busy && (inputMode === 'url' ? (ytUrl.trim() && !isFBIG && (!isTT || !!workerUrl)) : !!file);
 
   const doAnalyze = async () => {
     if (!canAnalyze) return;
@@ -1479,7 +1473,15 @@ function VideoAnalysisPanel({ apiKey }) {
         sourceLabel = ytUrl.trim();
         analysisResult = await analyzeVideoGemini(apiKey, { youtubeUrl: ytUrl.trim() });
       } else if (inputMode === 'url' && isTT) {
-        throw new Error('TikTok không hỗ trợ phân tích qua link do giới hạn trình duyệt. Hãy tải video về máy rồi dùng tab "Tải file lên".');
+        sourceLabel = ytUrl.trim();
+        setStatus('fetching');
+        const videoFile = await fetchTikTokViaWorker(ytUrl.trim(), workerUrl);
+        setStatus('uploading');
+        const uploaded = await uploadVideoToGemini(videoFile, apiKey);
+        setStatus('processing');
+        const fileUri = await waitForGeminiFile(uploaded.name, apiKey);
+        setStatus('analyzing');
+        analysisResult = await analyzeVideoGemini(apiKey, { fileUri, mimeType: 'video/mp4' });
       } else {
         setStatus('uploading');
         const uploaded = await uploadVideoToGemini(file, apiKey);
@@ -1542,10 +1544,17 @@ function VideoAnalysisPanel({ apiKey }) {
                   ✅ YouTube — Gemini phân tích trực tiếp, không cần tải về.
                 </div>
               );
-              if (isTT) return (
+              if (isTT) return workerUrl ? (
+                <div style={{fontSize:11,color:'var(--success)',marginTop:6}}>
+                  ✅ TikTok — Worker đã cấu hình, sẵn sàng phân tích.
+                </div>
+              ) : (
                 <div style={{fontSize:12,background:'var(--warning-light)',color:'var(--warning-text)',border:'1px solid var(--warning)',borderRadius:'var(--radius-sm)',padding:'8px 12px',marginTop:8}}>
-                  ⚠️ <strong>TikTok</strong> — trình duyệt không cho phép tải video trực tiếp.<br/>
-                  <span style={{marginTop:4,display:'block'}}>👉 Tải video về máy → dùng tab <strong>"Tải file lên"</strong> để phân tích.</span>
+                  ⚠️ <strong>TikTok</strong> — cần cấu hình Cloudflare Worker để dùng link trực tiếp.<br/>
+                  <span style={{marginTop:4,display:'block',cursor:'pointer',textDecoration:'underline'}}
+                    onClick={() => setShowWorkerSetting(true)}>
+                    👉 Nhấn đây để nhập Worker URL
+                  </span>
                 </div>
               );
               if (isFB || isIG) {
@@ -1587,6 +1596,35 @@ function VideoAnalysisPanel({ apiKey }) {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {showWorkerSetting && (
+          <div style={{marginTop:12,padding:'12px 14px',background:'var(--surface-2)',borderRadius:'var(--radius)',border:'1px solid var(--border)'}}>
+            <div style={{fontWeight:600,fontSize:13,marginBottom:8}}>Cloudflare Worker URL</div>
+            <div style={{fontSize:12,color:'var(--text-secondary)',marginBottom:8}}>
+              Dán URL Worker của chị vào đây (dạng <code>https://xxx.workers.dev</code>)
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <input className="form-input" style={{flex:1,fontSize:13}}
+                placeholder="https://tiktok-proxy.your-name.workers.dev"
+                value={workerInput} onChange={e => setWorkerInput(e.target.value)}/>
+              <button className="btn btn-primary btn-sm" onClick={() => { setWorkerUrl(workerInput.trim()); setShowWorkerSetting(false); }}
+                disabled={!workerInput.trim()}>Lưu</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowWorkerSetting(false)}>Hủy</button>
+            </div>
+            {workerUrl && <div style={{fontSize:11,color:'var(--text-muted)',marginTop:6}}>
+              Hiện tại: {workerUrl} — <span style={{cursor:'pointer',color:'var(--danger)',textDecoration:'underline'}} onClick={() => { setWorkerUrl(''); setWorkerInput(''); }}>Xóa</span>
+            </div>}
+          </div>
+        )}
+
+        {!showWorkerSetting && (
+          <div style={{marginTop:8,fontSize:11,color:'var(--text-muted)'}}>
+            {workerUrl
+              ? <>Worker: <code style={{fontSize:10}}>{workerUrl.replace(/https?:\/\//, '')}</code> — <span style={{cursor:'pointer',textDecoration:'underline'}} onClick={() => { setWorkerInput(workerUrl); setShowWorkerSetting(true); }}>Sửa</span></>
+              : <span style={{cursor:'pointer',textDecoration:'underline'}} onClick={() => setShowWorkerSetting(true)}>Cài Worker để hỗ trợ TikTok link</span>
+            }
           </div>
         )}
 
