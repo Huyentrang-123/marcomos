@@ -1468,7 +1468,7 @@ function VideoAnalysisPanel({ apiKey }) {
   const isYT = urlVal.includes('youtube.com') || urlVal.includes('youtu.be');
   const isTT = urlVal.includes('tiktok.com');
   const isFBIG = urlVal.includes('facebook.com') || urlVal.includes('fb.watch') || urlVal.includes('instagram.com');
-  const canAnalyze = apiKey && !busy && (inputMode === 'url' ? (ytUrl.trim() && !isFBIG) : !!file);
+  const canAnalyze = apiKey && !busy && (inputMode === 'url' ? (ytUrl.trim() && !isFBIG && !isTT) : !!file);
 
   const doAnalyze = async () => {
     if (!canAnalyze) return;
@@ -1479,15 +1479,7 @@ function VideoAnalysisPanel({ apiKey }) {
         sourceLabel = ytUrl.trim();
         analysisResult = await analyzeVideoGemini(apiKey, { youtubeUrl: ytUrl.trim() });
       } else if (inputMode === 'url' && isTT) {
-        sourceLabel = ytUrl.trim();
-        setStatus('fetching');
-        const videoFile = await fetchTikTokVideo(ytUrl.trim());
-        setStatus('uploading');
-        const uploaded = await uploadVideoToGemini(videoFile, apiKey);
-        setStatus('processing');
-        const fileUri = await waitForGeminiFile(uploaded.name, apiKey);
-        setStatus('analyzing');
-        analysisResult = await analyzeVideoGemini(apiKey, { fileUri, mimeType: 'video/mp4' });
+        throw new Error('TikTok không hỗ trợ phân tích qua link do giới hạn trình duyệt. Hãy tải video về máy rồi dùng tab "Tải file lên".');
       } else {
         setStatus('uploading');
         const uploaded = await uploadVideoToGemini(file, apiKey);
@@ -1551,8 +1543,9 @@ function VideoAnalysisPanel({ apiKey }) {
                 </div>
               );
               if (isTT) return (
-                <div style={{fontSize:11,color:'var(--success)',marginTop:6}}>
-                  ✅ TikTok — app sẽ tự tải và phân tích, không cần làm thủ công.
+                <div style={{fontSize:12,background:'var(--warning-light)',color:'var(--warning-text)',border:'1px solid var(--warning)',borderRadius:'var(--radius-sm)',padding:'8px 12px',marginTop:8}}>
+                  ⚠️ <strong>TikTok</strong> — trình duyệt không cho phép tải video trực tiếp.<br/>
+                  <span style={{marginTop:4,display:'block'}}>👉 Tải video về máy → dùng tab <strong>"Tải file lên"</strong> để phân tích.</span>
                 </div>
               );
               if (isFB || isIG) {
