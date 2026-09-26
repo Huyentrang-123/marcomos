@@ -1358,14 +1358,20 @@ async function fetchTikTokViaWorker(tiktokUrl, workerUrl) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: tiktokUrl })
     });
-  } catch {
-    throw new Error('Không kết nối được tới Worker. Kiểm tra lại URL Worker trong cài đặt.');
+  } catch (e) {
+    throw new Error(`Không kết nối được tới Worker: ${e.message}`);
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `Lỗi Worker: ${res.status}`);
   }
-  const blob = await res.blob();
+  let blob;
+  try {
+    blob = await res.blob();
+  } catch (e) {
+    throw new Error(`Tải video thất bại (kết nối bị ngắt): ${e.message}`);
+  }
+  if (!blob || blob.size === 0) throw new Error('Video trả về rỗng — Worker có thể bị timeout');
   return new File([blob], 'tiktok-video.mp4', { type: 'video/mp4' });
 }
 
