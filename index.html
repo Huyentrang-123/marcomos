@@ -965,7 +965,7 @@ function KOCPanel({ collection, currency }) {
               <thead>
                 <tr>
                   <th style={{width:36}}>#</th>
-                  <th>Tên</th><th>Link IG</th><th>Gmail</th><th>Follow IG</th>
+                  <th>Tên</th><th>Link IG</th><th>Gmail</th><th>Link bài</th>
                   <th>Trạng thái</th><th>Báo giá ({currency})</th><th>Ghi chú</th>
                   <th>Địa chỉ</th><th>Số TK</th><th>Hợp đồng</th><th>Liên hệ cuối</th><th></th>
                 </tr>
@@ -983,7 +983,13 @@ function KOCPanel({ collection, currency }) {
                       ) : <EditableCell value={k.instagram} onChange={v => handleUpdate(k.id,{instagram:v})}/>}
                     </td>
                     <td style={{minWidth:120}}><EditableCell value={k.gmail} onChange={v => handleUpdate(k.id,{gmail:v})}/></td>
-                    <td style={{minWidth:70}}><EditableCell value={k.followers} onChange={v => handleUpdate(k.id,{followers:v})}/></td>
+                    <td style={{minWidth:130}}>
+                      {k.followers && k.followers.startsWith('http') ? (
+                        <a href={k.followers} target="_blank" rel="noopener" style={{color:'var(--accent)',fontSize:12,whiteSpace:'nowrap',display:'block',overflow:'hidden',textOverflow:'ellipsis',maxWidth:200}}>
+                          {k.followers}
+                        </a>
+                      ) : <EditableCell value={k.followers} onChange={v => handleUpdate(k.id,{followers:v})}/>}
+                    </td>
                     <td style={{minWidth:110}}><KOCStatusCell value={k.status} onChange={v => handleUpdate(k.id,{status:v})}/></td>
                     <td style={{minWidth:90}}><EditableCell value={k.price} onChange={v => handleUpdate(k.id,{price:v})}/></td>
                     <td style={{minWidth:120}}><EditableCell value={k.notes} onChange={v => handleUpdate(k.id,{notes:v})}/></td>
