@@ -947,6 +947,13 @@ function KOCPanel({ collection, currency }) {
           <option value="">Tất cả trạng thái</option>
           {KOC_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        <button className="btn btn-ghost btn-sm" style={{color:'var(--danger)',whiteSpace:'nowrap'}}
+          onClick={() => {
+            if (!window.confirm('Xóa hết dữ liệu cột "Link bài" của tất cả KOC?')) return;
+            kocs.forEach(k => db.collection(collection).doc(k.id).update({ followers: '' }));
+          }}>
+          🗑 Xóa cột Link bài
+        </button>
       </div>
       {loading ? (
         <div className="loading-state">&#9203; Đang tải dữ liệu...</div>
@@ -982,8 +989,8 @@ function KOCPanel({ collection, currency }) {
                         </a>
                       ) : <EditableCell value={k.instagram} onChange={v => handleUpdate(k.id,{instagram:v})}/>}
                     </td>
-                    <td style={{minWidth:120}}><EditableCell value={k.gmail} onChange={v => handleUpdate(k.id,{gmail:v})}/></td>
-                    <td style={{minWidth:130}}>
+                    <td style={{minWidth:90}}><EditableCell value={k.gmail} onChange={v => handleUpdate(k.id,{gmail:v})}/></td>
+                    <td style={{minWidth:150}}>
                       {k.followers && k.followers.startsWith('http') ? (
                         <a href={k.followers} target="_blank" rel="noopener" style={{color:'var(--accent)',fontSize:12,whiteSpace:'nowrap',display:'block',overflow:'hidden',textOverflow:'ellipsis',maxWidth:200}}>
                           {k.followers}
