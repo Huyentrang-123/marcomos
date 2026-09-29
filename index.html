@@ -947,13 +947,6 @@ function KOCPanel({ collection, currency }) {
           <option value="">Tất cả trạng thái</option>
           {KOC_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <button className="btn btn-ghost btn-sm" style={{color:'var(--danger)',whiteSpace:'nowrap'}}
-          onClick={() => {
-            if (!window.confirm('Xóa hết dữ liệu cột "Link bài" của tất cả KOC?')) return;
-            kocs.forEach(k => db.collection(collection).doc(k.id).update({ followers: '' }));
-          }}>
-          🗑 Xóa cột Link bài
-        </button>
       </div>
       {loading ? (
         <div className="loading-state">&#9203; Đang tải dữ liệu...</div>
