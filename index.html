@@ -816,6 +816,40 @@ function PasteParser({ onAdd }) {
   );
 }
 
+function MultiLinkCell({ value, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value || '');
+  const ref = useRef(null);
+  useEffect(() => { setVal(value || ''); }, [value]);
+  useEffect(() => { if (editing && ref.current) ref.current.focus(); }, [editing]);
+  const save = () => { setEditing(false); if (val !== (value||'')) onChange(val); };
+
+  if (editing) return (
+    <textarea ref={ref} value={val} onChange={e => setVal(e.target.value)}
+      onBlur={save}
+      placeholder="Mỗi link 1 dòng..."
+      style={{width:'100%',minWidth:180,minHeight:56,fontSize:12,resize:'vertical'}}/>
+  );
+
+  const lines = (value||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  if (!lines.length) return (
+    <span onClick={() => setEditing(true)} style={{color:'var(--text-muted)',fontSize:12,cursor:'pointer'}}>Dán link...</span>
+  );
+  return (
+    <div onClick={() => setEditing(true)} style={{cursor:'pointer'}} title="Click để chỉnh sửa">
+      {lines.map((l,i) => l.startsWith('http') ? (
+        <a key={i} href={l} target="_blank" rel="noopener"
+          onClick={e => e.stopPropagation()}
+          style={{display:'block',color:'var(--accent)',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:180}}>
+          🔗 Link {i+1}
+        </a>
+      ) : (
+        <span key={i} style={{display:'block',fontSize:12}}>{l}</span>
+      ))}
+    </div>
+  );
+}
+
 function EditableCell({ value, onChange }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value);
@@ -983,12 +1017,8 @@ function KOCPanel({ collection, currency }) {
                       ) : <EditableCell value={k.instagram} onChange={v => handleUpdate(k.id,{instagram:v})}/>}
                     </td>
                     <td style={{minWidth:90}}><EditableCell value={k.gmail} onChange={v => handleUpdate(k.id,{gmail:v})}/></td>
-                    <td style={{minWidth:150}}>
-                      {k.followers && k.followers.startsWith('http') ? (
-                        <a href={k.followers} target="_blank" rel="noopener" style={{color:'var(--accent)',fontSize:12,whiteSpace:'nowrap',display:'block',overflow:'hidden',textOverflow:'ellipsis',maxWidth:200}}>
-                          {k.followers}
-                        </a>
-                      ) : <EditableCell value={k.followers} onChange={v => handleUpdate(k.id,{followers:v})}/>}
+                    <td style={{minWidth:160}}>
+                      <MultiLinkCell value={k.followers} onChange={v => handleUpdate(k.id,{followers:v})}/>
                     </td>
                     <td style={{minWidth:110}}><KOCStatusCell value={k.status} onChange={v => handleUpdate(k.id,{status:v})}/></td>
                     <td style={{minWidth:90}}><EditableCell value={k.price} onChange={v => handleUpdate(k.id,{price:v})}/></td>
