@@ -92,6 +92,36 @@
       border-bottom-color: #a8326a;
     }
 
+    .notif-bar {
+      background: #f59e0b;
+      color: #1a1d23;
+      padding: 7px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      position: sticky;
+      top: 56px;
+      z-index: 99;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    [data-theme="dark"] .notif-bar { background: #b45309; color: #fef3c7; }
+    .notif-bar strong { font-weight: 700; }
+    .notif-bar-dismiss {
+      margin-left: auto;
+      background: rgba(0,0,0,0.18);
+      border: none;
+      border-radius: 5px;
+      padding: 3px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: inherit;
+      white-space: nowrap;
+    }
+    .notif-bar-dismiss:hover { background: rgba(0,0,0,0.28); }
+
     .app-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; color: #ffffff; }
     .app-logo-icon { font-size: 22px; }
     .app-logo-sub { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.82); }
@@ -1774,6 +1804,55 @@ function ContentTab({ apiKey }) {
   );
 }
 
+function NotificationBar() {
+  const [newKOCs, setNewKOCs] = useState([]);
+
+  useEffect(() => {
+    let lastSeen;
+    try { lastSeen = localStorage.getItem('marcomos_last_seen') || ''; } catch { lastSeen = ''; }
+    if (!lastSeen) {
+      // Lần đầu mở app — lưu thời điểm hiện tại, không hiện thông báo
+      try { localStorage.setItem('marcomos_last_seen', new Date().toISOString()); } catch {}
+      return;
+    }
+
+    const combined = {};
+
+    const merge = (col, docs) => {
+      // Xóa entries cũ của collection này
+      Object.keys(combined).forEach(k => { if (combined[k].col === col) delete combined[k]; });
+      docs
+        .filter(d => (d.data().createdAt || '') > lastSeen)
+        .forEach(d => {
+          const key = col + d.id;
+          combined[key] = { id: key, name: d.data().name || '(chưa đặt tên)', col };
+        });
+      setNewKOCs(Object.values(combined));
+    };
+
+    const unsub1 = db.collection('kocs').onSnapshot(snap => merge('dai', snap.docs));
+    const unsub2 = db.collection('kocs_indo').onSnapshot(snap => merge('indo', snap.docs));
+    return () => { unsub1(); unsub2(); };
+  }, []);
+
+  const dismiss = () => {
+    try { localStorage.setItem('marcomos_last_seen', new Date().toISOString()); } catch {}
+    setNewKOCs([]);
+  };
+
+  if (newKOCs.length === 0) return null;
+
+  const names = newKOCs.slice(0, 3).map(k => k.name).join(', ');
+  const extra = newKOCs.length > 3 ? ` +${newKOCs.length - 3} KOC nữa` : '';
+
+  return (
+    <div className="notif-bar">
+      <span>🔔 Có <strong>{newKOCs.length}</strong> KOC mới vừa được thêm: <strong>{names}{extra}</strong></span>
+      <button className="notif-bar-dismiss" onClick={dismiss}>Đã xem ✓</button>
+    </div>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = useLocalStorage('marcomos_active_tab', 'koc');
   const [theme, setTheme] = useLocalStorage('marcomos_theme', 'light');
@@ -1808,6 +1887,7 @@ function App() {
           </button>
         </div>
       </header>
+      <NotificationBar/>
       <main className={`tab-content${(activeTab==='content'||activeTab==='koc'||activeTab==='translation')?' tab-content--full':''}`}>
         {activeTab==='koc' && <KOCDatabaseTab/>}
         {activeTab==='translation' && <TranslationTab mode={TRANSLATION_MODE}/>}
