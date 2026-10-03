@@ -100,6 +100,40 @@
     .app-header .btn-ghost { color: rgba(255,255,255,0.85); }
     .app-header .btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.15); color: #ffffff; }
 
+    /* Toast notification */
+    .koc-toast-stack { position: fixed; top: 0; left: 0; right: 0; z-index: 9999; }
+    .koc-toast {
+      background: #16a34a; color: #fff;
+      padding: 10px 20px;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      animation: toastIn .25s ease;
+    }
+    @keyframes toastIn { from { transform: translateY(-100%); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    .koc-toast-view {
+      background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 5px; padding: 3px 12px; cursor: pointer;
+      font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap;
+    }
+    .koc-toast-view:hover { background: rgba(255,255,255,0.38); }
+    .koc-toast-close {
+      background: none; border: none; color: rgba(255,255,255,0.8);
+      cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; margin-left: 4px;
+    }
+    .koc-toast-close:hover { color: #fff; }
+    /* Bell badge */
+    .notif-bell-wrap { position: relative; display: inline-flex; }
+    .notif-badge {
+      position: absolute; top: -4px; right: -4px;
+      background: #ef4444; color: #fff; border-radius: 50%;
+      font-size: 9px; font-weight: 800;
+      min-width: 15px; height: 15px;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+
     .header-tabs {
       display: flex;
       align-items: center;
@@ -1779,14 +1813,77 @@ function App() {
   const [activeTab, setActiveTab] = useLocalStorage('marcomos_active_tab', 'koc');
   const [theme, setTheme] = useLocalStorage('marcomos_theme', 'light');
   const [apiKey] = useLocalStorage('marcomos_api_key', '');
+  const [toasts, setToasts] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const pageLoadRef = useRef(new Date().toISOString());
+  const shownRef = useRef(new Set());
+
   useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+
+  useEffect(() => {
+    let lastSeen;
+    try { lastSeen = localStorage.getItem('marcomos_last_seen') || ''; } catch { lastSeen = ''; }
+    if (!lastSeen) {
+      try { localStorage.setItem('marcomos_last_seen', new Date().toISOString()); } catch {}
+    }
+
+    const unreadMap = {};
+
+    const processSnap = (col, snap) => {
+      Object.keys(unreadMap).forEach(k => { if (unreadMap[k] === col) delete unreadMap[k]; });
+      snap.docs.forEach(d => {
+        const data = d.data();
+        const createdAt = data.createdAt || '';
+        const uid = col + ':' + d.id;
+        if (lastSeen && createdAt > lastSeen) unreadMap[uid] = col;
+        if (createdAt > pageLoadRef.current && !shownRef.current.has(uid)) {
+          shownRef.current.add(uid);
+          const tid = uid + '_' + Date.now();
+          const name = data.name || '(chưa đặt tên)';
+          setToasts(prev => [...prev, { id: tid, name }]);
+          setTimeout(() => setToasts(prev => prev.filter(t => t.id !== tid)), 6000);
+        }
+      });
+      setUnreadCount(Object.keys(unreadMap).length);
+    };
+
+    const u1 = db.collection('kocs').onSnapshot(s => processSnap('dai', s));
+    const u2 = db.collection('kocs_indo').onSnapshot(s => processSnap('indo', s));
+    return () => { u1(); u2(); };
+  }, []);
+
+  const dismissToast = id => setToasts(prev => prev.filter(t => t.id !== id));
+
+  const markRead = () => {
+    try { localStorage.setItem('marcomos_last_seen', new Date().toISOString()); } catch {}
+    setUnreadCount(0);
+  };
+
+  const viewKOC = id => {
+    dismissToast(id);
+    markRead();
+    setActiveTab('koc');
+  };
+
   const tabs = [
     { id: 'koc', label: 'KOC Database' },
     { id: 'translation', label: 'Translation' },
     { id: 'content', label: 'Content' },
   ];
+
   return (
     <div id="app">
+      {toasts.length > 0 && (
+        <div className="koc-toast-stack">
+          {toasts.map(t => (
+            <div key={t.id} className="koc-toast">
+              <span>🔔 KOC mới vừa được thêm: <strong>{t.name}</strong></span>
+              <button className="koc-toast-view" onClick={() => viewKOC(t.id)}>Xem</button>
+              <button className="koc-toast-close" onClick={() => dismissToast(t.id)}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
       <header className="app-header">
         <div className="app-logo">
           <span className="app-logo-icon">&#127916;</span>
@@ -1807,6 +1904,13 @@ function App() {
             title={theme==='light'?'Dark mode':'Light mode'}>
             {theme==='light'?'🌙':'☀️'}
           </button>
+          <div className="notif-bell-wrap">
+            <button className="btn btn-ghost btn-sm btn-icon" title="Thông báo KOC mới"
+              onClick={() => { markRead(); setActiveTab('koc'); }}>
+              🔔
+            </button>
+            {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+          </div>
         </div>
       </header>
       <main className={`tab-content${(activeTab==='content'||activeTab==='koc'||activeTab==='translation')?' tab-content--full':''}`}>
