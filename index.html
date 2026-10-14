@@ -531,9 +531,15 @@ function useFirestoreCol(col) {
 }
 
 /* ── GEMINI TRANSLATION API ── */
-async function callGemini(prompt, apiKey, attempt = 0) {
+const GEMINI_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+];
+
+async function callGeminiModel(prompt, apiKey, model, attempt = 0) {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -548,11 +554,12 @@ async function callGemini(prompt, apiKey, attempt = 0) {
     const msg = e.error?.message || '';
     const isOverload = res.status === 503 || msg.toLowerCase().includes('high demand') || msg.toLowerCase().includes('overloaded');
     const isQuota = res.status === 429 || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate');
-    if (isOverload && attempt < 3) {
-      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
-      return callGemini(prompt, apiKey, attempt + 1);
+    if (isOverload && attempt < 2) {
+      await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+      return callGeminiModel(prompt, apiKey, model, attempt + 1);
     }
     if (isQuota) throw new Error(msg || 'Quota exceeded: retry in 60s');
+    if (isOverload) throw Object.assign(new Error(msg || 'overloaded'), { overloaded: true });
     throw new Error(msg || `Lỗi API: ${res.status}`);
   }
   const d = await res.json();
@@ -565,6 +572,17 @@ async function callGemini(prompt, apiKey, attempt = 0) {
     throw new Error(`API trả về rỗng (finishReason: ${reason})`);
   }
   return text;
+}
+
+async function callGemini(prompt, apiKey) {
+  for (let i = 0; i < GEMINI_MODELS.length; i++) {
+    try {
+      return await callGeminiModel(prompt, apiKey, GEMINI_MODELS[i]);
+    } catch (e) {
+      if (e.overloaded && i < GEMINI_MODELS.length - 1) continue;
+      throw e;
+    }
+  }
 }
 
 async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
