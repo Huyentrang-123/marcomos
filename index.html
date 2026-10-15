@@ -559,7 +559,8 @@ async function callGeminiModel(prompt, apiKey, model, attempt = 0) {
       return callGeminiModel(prompt, apiKey, model, attempt + 1);
     }
     if (isQuota) throw new Error(msg || 'Quota exceeded: retry in 60s');
-    if (isOverload) throw Object.assign(new Error(msg || 'overloaded'), { overloaded: true });
+    const isUnavailable = res.status === 404 || res.status === 410 || msg.toLowerCase().includes('no longer available') || msg.toLowerCase().includes('deprecated');
+    if (isOverload || isUnavailable) throw Object.assign(new Error(msg || 'overloaded'), { overloaded: true });
     throw new Error(msg || `Lỗi API: ${res.status}`);
   }
   const d = await res.json();
