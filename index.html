@@ -1859,7 +1859,8 @@ function App() {
           shownRef.current.add(uid);
           const tid = uid + '_' + Date.now();
           const name = data.name || '(chưa đặt tên)';
-          setToasts(prev => [...prev, { id: tid, name }]);
+          const tabLabel = col === 'dai' ? 'KOC Đài Loan' : 'KOC Indonesia';
+          setToasts(prev => [...prev, { id: tid, name, tabLabel }]);
           setTimeout(() => setToasts(prev => prev.filter(t => t.id !== tid)), 6000);
         }
       });
@@ -1896,7 +1897,7 @@ function App() {
         <div className="koc-toast-stack">
           {toasts.map(t => (
             <div key={t.id} className="koc-toast">
-              <span>🔔 KOC mới vừa được thêm: <strong>{t.name}</strong></span>
+              <span>🔔 KOC mới [{t.tabLabel}]: <strong>{t.name}</strong></span>
               <button className="koc-toast-view" onClick={() => viewKOC(t.id)}>Xem</button>
               <button className="koc-toast-close" onClick={() => dismissToast(t.id)}>✕</button>
             </div>
