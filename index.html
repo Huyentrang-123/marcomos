@@ -364,6 +364,8 @@
     tr:hover td { background: var(--surface-2); }
     tr.koc-uncontacted td { background: rgba(253,224,71,0.22) !important; }
     tr.koc-uncontacted:hover td { background: rgba(253,224,71,0.38) !important; }
+    @keyframes kocFlash { 0%,100% { background: transparent; } 30%,70% { background: rgba(99,102,241,0.22) !important; } }
+    tr.koc-row-flash td { animation: kocFlash 1.8s ease; }
     td input, td select {
       background: var(--surface-1);
       border: 1px solid var(--accent);
@@ -1065,7 +1067,7 @@ function KOCPanel({ collection, currency }) {
               </thead>
               <tbody>
                 {filtered.map((k, i) => (
-                  <tr key={k.id} className={(!k.status || k.status === 'Chưa liên hệ') ? 'koc-uncontacted' : ''}>
+                  <tr key={k.id} id={'koc-row-' + k.id} className={(!k.status || k.status === 'Chưa liên hệ') ? 'koc-uncontacted' : ''}>
                     <td style={{color:'var(--text-muted)',textAlign:'center'}}>{i+1}</td>
                     <td style={{minWidth:120,fontWeight:500}}><EditableCell value={k.name} onChange={v => handleUpdate(k.id,{name:v})}/></td>
                     <td style={{minWidth:140}}>
@@ -1862,7 +1864,8 @@ function App() {
           const tid = uid + '_' + Date.now();
           const name = data.name || '(chưa đặt tên)';
           const tabLabel = col === 'dai' ? 'KOC Đài Loan' : 'KOC Indonesia';
-          setToasts(prev => [...prev, { id: tid, name, tabLabel }]);
+          const kocGroup = col === 'dai' ? 'tw' : 'id';
+          setToasts(prev => [...prev, { id: tid, name, tabLabel, kocDocId: d.id, kocGroup }]);
         }
       });
       setUnreadCount(Object.keys(unreadMap).length);
@@ -1880,10 +1883,19 @@ function App() {
     setUnreadCount(0);
   };
 
-  const viewKOC = id => {
-    dismissToast(id);
+  const viewKOC = (toastId, kocDocId, kocGroup) => {
+    dismissToast(toastId);
     markRead();
+    try { localStorage.setItem('marcomos_koc_group', kocGroup); } catch {}
     setActiveTab('koc');
+    setTimeout(() => {
+      const el = document.getElementById('koc-row-' + kocDocId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('koc-row-flash');
+        setTimeout(() => el.classList.remove('koc-row-flash'), 2000);
+      }
+    }, 350);
   };
 
   const tabs = [
@@ -1899,7 +1911,7 @@ function App() {
           {toasts.map(t => (
             <div key={t.id} className="koc-toast">
               <span>🔔 KOC mới [{t.tabLabel}]: <strong>{t.name}</strong></span>
-              <button className="koc-toast-view" onClick={() => viewKOC(t.id)}>Xem</button>
+              <button className="koc-toast-view" onClick={() => viewKOC(t.id, t.kocDocId, t.kocGroup)}>Xem</button>
               <button className="koc-toast-close" onClick={() => dismissToast(t.id)}>✕</button>
             </div>
           ))}
