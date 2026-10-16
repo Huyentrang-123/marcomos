@@ -1063,7 +1063,7 @@ function KOCPanel({ collection, currency }) {
               </thead>
               <tbody>
                 {filtered.map((k, i) => (
-                  <tr key={k.id}>
+                  <tr key={k.id} style={(!k.status || k.status === 'Chưa liên hệ') ? {background:'rgba(253,224,71,0.18)'} : {}}>
                     <td style={{color:'var(--text-muted)',textAlign:'center'}}>{i+1}</td>
                     <td style={{minWidth:120,fontWeight:500}}><EditableCell value={k.name} onChange={v => handleUpdate(k.id,{name:v})}/></td>
                     <td style={{minWidth:140}}>
