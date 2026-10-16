@@ -1861,7 +1861,6 @@ function App() {
           const name = data.name || '(chưa đặt tên)';
           const tabLabel = col === 'dai' ? 'KOC Đài Loan' : 'KOC Indonesia';
           setToasts(prev => [...prev, { id: tid, name, tabLabel }]);
-          setTimeout(() => setToasts(prev => prev.filter(t => t.id !== tid)), 6000);
         }
       });
       setUnreadCount(Object.keys(unreadMap).length);
