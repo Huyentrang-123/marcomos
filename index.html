@@ -535,6 +535,7 @@ function useFirestoreCol(col) {
 }
 
 /* ── GEMINI TRANSLATION API ── */
+const DEFAULT_GEMINI_KEY = 'AIzaSyBMnAI31wJgmP_Lh8U9oE0j9qPwA8gDfRw';
 const GEMINI_MODELS = [
   'gemini-3.8-flash',
   'gemini-3.6-flash',
@@ -1133,7 +1134,7 @@ function APISettings({ apiKey, onSave }) {
   const [saved, setSaved] = useState(false);
   const handleSave = () => { onSave(key.trim()); setSaved(true); setTimeout(() => setSaved(false), 2000); };
 
-  if (apiKey) return null;
+  return null;
 
   return (
     <div className="api-settings">
@@ -1230,7 +1231,7 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
   const countdownRef = React.useRef(null);
   const autoRetriedRef = React.useRef(false);
 
-  const canTranslate = source.trim() && (mode === 'proxy' || apiKey) && countdown === 0 && !loading;
+  const canTranslate = source.trim() && countdown === 0 && !loading;
   const dirLabel = group.dirLabels[direction] || Object.values(group.dirLabels)[0];
 
   const startCountdown = (secs) => {
@@ -1396,7 +1397,8 @@ function TranslationPanel({ group, mode, apiKey, onSaveKey }) {
 }
 
 function TranslationTab({ mode }) {
-  const [apiKey, setApiKey] = useLocalStorage('marcomos_api_key', '');
+  const [storedKey, setApiKey] = useLocalStorage('marcomos_api_key', '');
+  const apiKey = storedKey || DEFAULT_GEMINI_KEY;
   const [activeGroup, setActiveGroup] = useLocalStorage('marcomos_trans_group', 'tw');
   const group = TRANSLATION_GROUPS.find(g => g.id === activeGroup) || TRANSLATION_GROUPS[0];
 
