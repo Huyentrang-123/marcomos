@@ -597,6 +597,8 @@ async function translateDirect(text, apiKey, direction = 'tw_to_vi') {
     vi_to_tw: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Trung phồn thể (Đài Loan, dùng phồn thể 繁體中文). Tùy ngữ cảnh, hãy thêm emoji phù hợp để cuộc trò chuyện thêm gần gũi (chỉ thêm khi tự nhiên). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
     id_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Indonesia sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi"). Tùy ngữ cảnh, hãy thêm emoji phù hợp vào cuối câu hoặc đoạn để cuộc trò chuyện thêm gần gũi, cởi mở (chỉ thêm khi tự nhiên, đừng lạm dụng). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
     vi_to_id: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Indonesia tự nhiên. Tùy ngữ cảnh, hãy thêm emoji phù hợp để cuộc trò chuyện thêm gần gũi (chỉ thêm khi tự nhiên). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    my_to_vi: `Bạn là dịch giả chuyên nghiệp về tiếng Việt thông dụng. Hãy dịch đoạn văn bản sau từ tiếng Mã Lai (Malaysia) sang tiếng Việt tự nhiên, thân mật như người Việt hay nói hàng ngày (dùng "mình/bạn" thay vì "tôi"). Tùy ngữ cảnh, hãy thêm emoji phù hợp vào cuối câu hoặc đoạn để cuộc trò chuyện thêm gần gũi, cởi mở (chỉ thêm khi tự nhiên, đừng lạm dụng). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
+    vi_to_my: `Bạn là dịch giả chuyên nghiệp. Hãy dịch đoạn văn bản sau từ tiếng Việt sang tiếng Mã Lai (Malaysia) tự nhiên. Tùy ngữ cảnh, hãy thêm emoji phù hợp để cuộc trò chuyện thêm gần gũi (chỉ thêm khi tự nhiên). Chỉ trả về bản dịch, không giải thích, không chú thích:\n\n${text}`,
   };
   return callGemini(prompts[direction] || prompts.tw_to_vi, apiKey);
 }
@@ -1108,6 +1110,7 @@ function KOCDatabaseTab() {
   const groups = [
     { id: 'tw', icon: '🇹🇼', label: 'KOC Đài Loan', collection: 'kocs',      currency: 'TWD' },
     { id: 'id', icon: '🇮🇩', label: 'KOC Indonesia', collection: 'kocs_indo', currency: 'IDR' },
+    { id: 'my', icon: '🇲🇾', label: 'KOC Malaysia',   collection: 'kocs_my',   currency: 'MYR' },
   ];
   const active = groups.find(g => g.id === activeGroup) || groups[0];
   return (
@@ -1212,6 +1215,12 @@ const TRANSLATION_GROUPS = [
     srcFlag: '🇮🇩', tgtFlag: '🇻🇳',
     dirLabels: { id_to_vi: { title: 'Dịch Indonesia → Việt Nam', src: 'Tiếng Indonesia', tgt: 'Tiếng Việt', srcPh: 'Dán văn bản tiếng Indonesia vào đây...' },
                  vi_to_id: { title: 'Dịch Việt Nam → Indonesia', src: 'Tiếng Việt', tgt: 'Tiếng Indonesia', srcPh: 'Dán văn bản tiếng Việt vào đây...' } }
+  },
+  { id: 'my', icon: '🇲🇾', label: 'Malaysia', histCol: 'translations_my', tplCol: 'templates_my',
+    defaultDir: 'my_to_vi', swapDir: { my_to_vi: 'vi_to_my', vi_to_my: 'my_to_vi' },
+    srcFlag: '🇲🇾', tgtFlag: '🇻🇳',
+    dirLabels: { my_to_vi: { title: 'Dịch Malaysia → Việt Nam', src: 'Tiếng Mã Lai', tgt: 'Tiếng Việt', srcPh: 'Dán văn bản tiếng Mã Lai vào đây...' },
+                 vi_to_my: { title: 'Dịch Việt Nam → Malaysia', src: 'Tiếng Việt', tgt: 'Tiếng Mã Lai', srcPh: 'Dán văn bản tiếng Việt vào đây...' } }
   },
 ];
 
@@ -1865,8 +1874,8 @@ function App() {
           shownRef.current.add(uid);
           const tid = uid + '_' + Date.now();
           const name = data.name || '(chưa đặt tên)';
-          const tabLabel = col === 'dai' ? 'KOC Đài Loan' : 'KOC Indonesia';
-          const kocGroup = col === 'dai' ? 'tw' : 'id';
+          const tabLabel = col === 'dai' ? 'KOC Đài Loan' : col === 'indo' ? 'KOC Indonesia' : 'KOC Malaysia';
+          const kocGroup = col === 'dai' ? 'tw' : col === 'indo' ? 'id' : 'my';
           setToasts(prev => [...prev, { id: tid, name, tabLabel, kocDocId: d.id, kocGroup }]);
         }
       });
@@ -1875,7 +1884,8 @@ function App() {
 
     const u1 = db.collection('kocs').onSnapshot(s => processSnap('dai', s));
     const u2 = db.collection('kocs_indo').onSnapshot(s => processSnap('indo', s));
-    return () => { u1(); u2(); };
+    const u3 = db.collection('kocs_my').onSnapshot(s => processSnap('my', s));
+    return () => { u1(); u2(); u3(); };
   }, []);
 
   const dismissToast = id => setToasts(prev => prev.filter(t => t.id !== id));
