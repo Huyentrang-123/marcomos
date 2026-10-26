@@ -877,51 +877,82 @@ function PasteParser({ onAdd }) {
   );
 }
 
-function MultiLinkCell({ value, onChange }) {
-  const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(value || '');
-  const ref = useRef(null);
-  useEffect(() => { setVal(value || ''); }, [value]);
-  useEffect(() => { if (editing && ref.current) ref.current.focus(); }, [editing]);
-  const save = () => { setEditing(false); if (val !== (value||'')) onChange(val); };
+function linkIcon(url) {
+  if (/tiktok\.com/i.test(url)) return '🎵';
+  if (/facebook\.com|fb\.com|fb\.watch/i.test(url)) return '📘';
+  if (/instagram\.com/i.test(url)) return '📸';
+  if (/youtube\.com|youtu\.be/i.test(url)) return '▶️';
+  return '🔗';
+}
+function linkLabel(url) {
+  if (/tiktok\.com/i.test(url)) return 'TikTok';
+  if (/facebook\.com|fb\.com|fb\.watch/i.test(url)) return 'Facebook';
+  if (/instagram\.com/i.test(url)) return 'Instagram';
+  if (/youtube\.com|youtu\.be/i.test(url)) return 'YouTube';
+  return 'Link';
+}
 
-  if (editing) return (
-    <div style={{display:'flex',flexDirection:'column',gap:4}}>
-      <textarea ref={ref} value={val} onChange={e => setVal(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Escape') { setEditing(false); setVal(value||''); } }}
-        placeholder="Mỗi link 1 dòng..."
-        style={{width:'100%',minWidth:180,minHeight:56,fontSize:12,resize:'vertical'}}/>
-      <div style={{display:'flex',gap:4}}>
-        <button onMouseDown={e => e.preventDefault()} onClick={save}
-          style={{flex:1,padding:'3px 0',fontSize:11,background:'var(--accent)',color:'#fff',border:'none',borderRadius:4,cursor:'pointer'}}>
-          Lưu
-        </button>
-        <button onMouseDown={e => e.preventDefault()} onClick={() => { setEditing(false); setVal(value||''); }}
-          style={{padding:'3px 8px',fontSize:11,background:'var(--surface-2)',border:'1px solid var(--border)',borderRadius:4,cursor:'pointer'}}>
-          Hủy
-        </button>
-      </div>
-    </div>
-  );
+function MultiLinkCell({ value, onChange }) {
+  const [adding, setAdding] = useState(false);
+  const [newLink, setNewLink] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => { if (adding && inputRef.current) inputRef.current.focus(); }, [adding]);
 
   const lines = (value||'').split('\n').map(l=>l.trim()).filter(Boolean);
-  if (!lines.length) return (
-    <span onClick={() => setEditing(true)} style={{color:'var(--text-muted)',fontSize:12,cursor:'pointer'}}>Dán link...</span>
-  );
+
+  const addLink = () => {
+    const trimmed = newLink.trim();
+    if (!trimmed) { setAdding(false); return; }
+    const updated = [...lines, trimmed].join('\n');
+    onChange(updated);
+    setNewLink('');
+    setAdding(false);
+  };
+
+  const removeLink = (idx) => {
+    const updated = lines.filter((_,i) => i !== idx).join('\n');
+    onChange(updated);
+  };
+
   return (
-    <div style={{display:'flex',flexDirection:'column',gap:2}}>
-      {lines.map((l,i) => l.startsWith('http') ? (
-        <a key={i} href={l} target="_blank" rel="noopener"
-          style={{display:'block',color:'var(--accent)',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:180}}>
-          🔗 Link {i+1}
-        </a>
-      ) : (
-        <span key={i} style={{display:'block',fontSize:12}}>{l}</span>
+    <div style={{display:'flex',flexDirection:'column',gap:3,minWidth:160}}>
+      {lines.map((l, i) => (
+        <div key={i} style={{display:'flex',alignItems:'center',gap:4}}>
+          {l.startsWith('http') ? (
+            <a href={l} target="_blank" rel="noopener"
+              style={{flex:1,color:'var(--accent)',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:150,textDecoration:'none',display:'flex',alignItems:'center',gap:3}}>
+              <span>{linkIcon(l)}</span><span>{linkLabel(l)} {lines.filter(x=>x.startsWith('http')).indexOf(l)+1}</span>
+            </a>
+          ) : (
+            <span style={{flex:1,fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l}</span>
+          )}
+          <button onMouseDown={e=>e.preventDefault()} onClick={()=>removeLink(i)}
+            style={{background:'none',border:'none',color:'#dc2626',cursor:'pointer',fontSize:13,padding:'0 2px',lineHeight:1,flexShrink:0}}>×</button>
+        </div>
       ))}
-      <span onClick={() => setEditing(true)}
-        style={{color:'var(--text-muted)',fontSize:11,cursor:'pointer',marginTop:2}}>
-        ✏️ Sửa / thêm link
-      </span>
+
+      {adding ? (
+        <div style={{display:'flex',gap:3,alignItems:'center'}}>
+          <input ref={inputRef} value={newLink} onChange={e=>setNewLink(e.target.value)}
+            onKeyDown={e=>{ if(e.key==='Enter'){e.preventDefault();addLink();} if(e.key==='Escape'){setAdding(false);setNewLink('');} }}
+            placeholder="Dán link vào đây..."
+            style={{flex:1,fontSize:11,padding:'3px 6px',border:'1px solid var(--accent)',borderRadius:4,minWidth:0,outline:'none'}}/>
+          <button onMouseDown={e=>e.preventDefault()} onClick={addLink}
+            style={{padding:'3px 8px',fontSize:11,background:'var(--accent)',color:'#fff',border:'none',borderRadius:4,cursor:'pointer',flexShrink:0}}>
+            Lưu
+          </button>
+          <button onMouseDown={e=>e.preventDefault()} onClick={()=>{setAdding(false);setNewLink('');}}
+            style={{padding:'3px 6px',fontSize:11,background:'none',border:'1px solid var(--border)',borderRadius:4,cursor:'pointer',flexShrink:0}}>
+            ✕
+          </button>
+        </div>
+      ) : (
+        <span onClick={()=>setAdding(true)}
+          style={{color:'var(--accent)',fontSize:11,cursor:'pointer',display:'inline-flex',alignItems:'center',gap:3}}>
+          + Thêm link
+        </span>
+      )}
     </div>
   );
 }
