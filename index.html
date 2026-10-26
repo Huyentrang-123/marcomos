@@ -783,7 +783,7 @@ function parseKOCBlock(rawText) {
         result.instagram = line;
       } else if (/[市區路街號樓巷]/.test(line) && line.length > 5) {
         result.address = line;
-      } else if (/^[一-鿿㐀-䶿]{2,5}$/.test(line)) {
+      } else if (/^[一-鿿㐀-䶿]{2,5}$/.test(line) || /^[A-Za-zÀ-ỹ][A-Za-zÀ-ỹ\s]{1,40}$/.test(line)) {
         if (!result.name) result.name = line;
       } else if (/^[\d,.]+\s*[kKmM]?$/.test(noSpace) && noSpace.length >= 3) {
         if (!result.followers) result.followers = line;
@@ -795,9 +795,14 @@ function parseKOCBlock(rawText) {
   }
 
   if (extraNotes.length > 0) {
-    result.notes = result.notes
-      ? result.notes + ' | ' + extraNotes.join(' | ')
-      : extraNotes.join(' | ');
+    if (!result.name) {
+      result.name = extraNotes.shift();
+    }
+    if (extraNotes.length > 0) {
+      result.notes = result.notes
+        ? result.notes + ' | ' + extraNotes.join(' | ')
+        : extraNotes.join(' | ');
+    }
   }
   return result;
 }
