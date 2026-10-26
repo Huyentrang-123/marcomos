@@ -704,8 +704,12 @@ function smartClassifyKOCParts(parts) {
 
     if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(p)) {
       result.gmail = p;
-    } else if (lower.includes('instagram.com') || lower.includes('instagr.am')) {
-      result.instagram = p;
+    } else if (/instagram\.com|instagr\.am|tiktok\.com|facebook\.com|fb\.com|fb\.watch/i.test(p)) {
+      result.instagram = result.instagram || p;
+      if (!result.name) {
+        const m = p.match(/(?:facebook\.com|tiktok\.com|instagram\.com)\/(?:@)?([^/?&#\n]+)/i);
+        if (m && m[1] && m[1] !== 'reel' && m[1] !== 'p' && m[1] !== 'video') result.name = m[1].replace(/\./g,' ').trim();
+      }
     } else if (/^@[a-zA-Z0-9._]{2,40}$/.test(p)) {
       result.instagram = p;
     } else if (/^https?:\/\//i.test(p)) {
@@ -779,8 +783,12 @@ function parseKOCBlock(rawText) {
         result.gmail = line;
       } else if (/^@[a-zA-Z0-9._]{2,40}$/.test(line)) {
         result.instagram = line;
-      } else if (line.toLowerCase().includes('instagram.com') || line.toLowerCase().includes('instagr.am')) {
-        result.instagram = line;
+      } else if (/instagram\.com|instagr\.am|tiktok\.com|facebook\.com|fb\.com|fb\.watch/i.test(line)) {
+        result.instagram = result.instagram || line;
+        if (!result.name) {
+          const m = line.match(/(?:facebook\.com|tiktok\.com|instagram\.com)\/(?:@)?([^/?&#\n]+)/i);
+          if (m && m[1] && m[1] !== 'reel' && m[1] !== 'p' && m[1] !== 'video') result.name = m[1].replace(/\./g,' ').trim();
+        }
       } else if (/[市區路街號樓巷]/.test(line) && line.length > 5) {
         result.address = line;
       } else if (/^[一-鿿㐀-䶿]{2,5}$/.test(line) || /^[A-Za-zÀ-ỹ][A-Za-zÀ-ỹ\s]{1,40}$/.test(line)) {
@@ -821,7 +829,7 @@ function PasteParser({ onAdd }) {
       const kocs = [];
       for (const section of sections) {
         const koc = parseKOCBlock(section);
-        if (!koc.name && !koc.instagram && !koc.gmail && !koc.bankAccount) continue;
+        if (!koc.name && !koc.instagram && !koc.gmail && !koc.bankAccount && !koc.contractLink) continue;
         kocs.push(koc);
       }
       if (kocs.length) onAdd(kocs);
@@ -852,7 +860,7 @@ function PasteParser({ onAdd }) {
       const parts = rows[i].map(s => (s || '').trim()).filter(Boolean);
       if (!parts.length) { skipped++; continue; }
       const koc = smartClassifyKOCParts(parts);
-      if (!koc.name && !koc.instagram && !koc.gmail) { skipped++; continue; }
+      if (!koc.name && !koc.instagram && !koc.gmail && !koc.contractLink) { skipped++; continue; }
       kocs.push(koc);
       added++;
     }
