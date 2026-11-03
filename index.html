@@ -816,6 +816,7 @@ function parseKOCBlock(rawText) {
 }
 
 function PasteParser({ onAdd }) {
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [msg, setMsg] = useState(null);
 
@@ -873,19 +874,24 @@ function PasteParser({ onAdd }) {
   };
 
   return (
-    <div className="card">
-      <div className="card-title" style={{marginBottom:6}}>&#128203; Nhập dữ liệu KOC</div>
-      <div style={{fontSize:12,color:'var(--text-secondary)',marginBottom:10,lineHeight:1.6}}>
-        Hệ thống <strong>tự nhận diện</strong> từng trường — không cần theo thứ tự.<br/>
-        Dán từ Google Sheets hoặc nhập thủ công, phân cách bằng <code style={{background:'var(--surface-3)',padding:'1px 6px',borderRadius:4}}>|</code>. Ví dụ:<br/>
-        <code style={{background:'var(--surface-3)',padding:'1px 6px',borderRadius:4}}>Nguyễn Thị A | @ten_ig | abc@gmail.com | 50K | 5000 TWD</code>
+    <div className="card" style={{padding:'10px 16px'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}} onClick={() => setOpen(o => !o)}>
+        <span className="card-title" style={{margin:0,fontSize:13}}>&#128203; Nhập dữ liệu KOC</span>
+        <span style={{fontSize:12,color:'var(--text-muted)'}}>{open ? '▲ Thu gọn' : '▼ Mở rộng'}</span>
       </div>
-      <textarea className="form-textarea" value={text} onChange={e => setText(e.target.value)}
-        placeholder="Dán dữ liệu từ Google Sheets vào đây..." style={{minHeight:100}}/>
-      {msg && <div className={`alert alert-${msg.type}`} style={{marginTop:8}}>{msg.text}</div>}
-      <div style={{marginTop:10}}>
-        <button className="btn btn-primary" onClick={parse} disabled={!text.trim()}>&#10133; Thêm vào Database</button>
-      </div>
+      {open && (
+        <div style={{marginTop:10}}>
+          <div style={{fontSize:12,color:'var(--text-secondary)',marginBottom:8,lineHeight:1.5}}>
+            Tự nhận diện từng trường. Phân cách bằng <code style={{background:'var(--surface-3)',padding:'1px 5px',borderRadius:3}}>|</code> hoặc dán từ Google Sheets.
+          </div>
+          <textarea className="form-textarea" value={text} onChange={e => setText(e.target.value)}
+            placeholder="Dán dữ liệu vào đây..." style={{minHeight:72}}/>
+          {msg && <div className={`alert alert-${msg.type}`} style={{marginTop:6,padding:'6px 10px',fontSize:12}}>{msg.text}</div>}
+          <div style={{marginTop:8}}>
+            <button className="btn btn-primary btn-sm" onClick={parse} disabled={!text.trim()}>&#10133; Thêm vào Database</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
