@@ -1074,6 +1074,7 @@ function KOCPanel({ collection, currency }) {
   const [kocs, loading] = useFirestoreCol(collection);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [showTop, setShowTop] = useState(false);
 
   const handleUpdate = (id, changes) => db.collection(collection).doc(id).update({ ...changes, lastContact: getToday() });
   const handleDelete = (id) => { if (confirm('Xóa KOC này?')) db.collection(collection).doc(id).delete(); };
@@ -1093,13 +1094,25 @@ function KOCPanel({ collection, currency }) {
 
   return (
     <div>
-      <div className="stats-bar">
-        <StatCard label="Tổng KOC" value={stats.total}/>
-        <StatCard label="Đang trao đổi" value={stats.negotiating} color="accent"/>
-        <StatCard label="Đồng ý hợp tác" value={stats.agreed} color="success"/>
-        <StatCard label="Đã xong" value={stats.booked} color="warning"/>
+      <div style={{marginBottom:8}}>
+        <div onClick={() => setShowTop(o => !o)} style={{cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)'}}>
+          <span style={{fontSize:13,color:'var(--text-secondary)'}}>
+            📊 Tổng <strong>{stats.total}</strong> KOC · {stats.negotiating} đang trao đổi · {stats.agreed} đồng ý · {stats.booked} đã xong
+          </span>
+          <span style={{fontSize:12,color:'var(--text-muted)',whiteSpace:'nowrap',marginLeft:8}}>{showTop ? '▲ Thu gọn' : '▼ Thống kê & Nhập liệu'}</span>
+        </div>
+        {showTop && (
+          <div style={{paddingTop:12}}>
+            <div className="stats-bar">
+              <StatCard label="Tổng KOC" value={stats.total}/>
+              <StatCard label="Đang trao đổi" value={stats.negotiating} color="accent"/>
+              <StatCard label="Đồng ý hợp tác" value={stats.agreed} color="success"/>
+              <StatCard label="Đã xong" value={stats.booked} color="warning"/>
+            </div>
+            <PasteParser onAdd={newKocs => newKocs.forEach(k => db.collection(collection).add(k))}/>
+          </div>
+        )}
       </div>
-      <PasteParser onAdd={newKocs => newKocs.forEach(k => db.collection(collection).add(k))}/>
       <div className="toolbar">
         <input className="form-input toolbar-search" placeholder="&#128269; Tìm theo tên, Link IG, Gmail..."
           value={search} onChange={e => setSearch(e.target.value)}/>
