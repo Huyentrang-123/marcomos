@@ -1125,9 +1125,10 @@ function KOCPanel({ collection, currency }) {
               <thead>
                 <tr>
                   <th style={{width:36}}>#</th>
-                  <th>Tên</th><th>Link IG</th><th>Gmail</th><th>Link bài</th>
+                  <th>Tên</th><th style={{width:100}}>Link IG</th><th>Gmail</th><th>Link bài</th>
+                  <th style={{textAlign:'center'}}>Duyệt</th>
                   <th>Trạng thái</th><th>Báo giá ({currency})</th><th>Ghi chú</th>
-                  <th>Địa chỉ</th><th>Số TK</th><th style={{textAlign:'center'}}>Duyệt</th><th></th>
+                  <th>Địa chỉ</th><th>Số TK</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -1135,9 +1136,9 @@ function KOCPanel({ collection, currency }) {
                   <tr key={k.id} id={'koc-row-' + k.id} className={(!k.status || k.status === 'Chưa liên hệ') ? 'koc-uncontacted' : ''}>
                     <td style={{color:'var(--text-muted)',textAlign:'center'}}>{i+1}</td>
                     <td style={{minWidth:120,fontWeight:500}}><EditableCell value={k.name} onChange={v => handleUpdate(k.id,{name:v})}/></td>
-                    <td style={{minWidth:140}}>
+                    <td style={{width:100,maxWidth:100,overflow:'hidden'}}>
                       {k.instagram && k.instagram.startsWith('http') ? (
-                        <a href={k.instagram} target="_blank" rel="noopener" style={{color:'var(--accent)',fontSize:12,whiteSpace:'nowrap'}}>
+                        <a href={k.instagram} target="_blank" rel="noopener" style={{color:'var(--accent)',fontSize:12,whiteSpace:'nowrap',display:'block',overflow:'hidden',textOverflow:'ellipsis',maxWidth:96}}>
                           {k.instagram.replace('https://www.instagram.com/','@').replace(/\/$/,'')}
                         </a>
                       ) : <EditableCell value={k.instagram} onChange={v => handleUpdate(k.id,{instagram:v})}/>}
@@ -1146,15 +1147,15 @@ function KOCPanel({ collection, currency }) {
                     <td style={{minWidth:160}}>
                       <MultiLinkCell value={k.followers} onChange={v => handleUpdate(k.id,{followers:v})}/>
                     </td>
+                    <td style={{textAlign:'center',verticalAlign:'middle'}}>
+                      <input type="checkbox" checked={!!k.approved} onChange={e => db.collection(collection).doc(k.id).update({approved: e.target.checked})}
+                        style={{width:18,height:18,cursor:'pointer',accentColor:'var(--success)'}}/>
+                    </td>
                     <td style={{minWidth:110}}><KOCStatusCell value={k.status} onChange={v => handleUpdate(k.id,{status:v})}/></td>
                     <td style={{minWidth:90}}><EditableCell value={k.price} onChange={v => handleUpdate(k.id,{price:v})}/></td>
                     <td style={{minWidth:120}}><EditableCell value={k.notes} onChange={v => handleUpdate(k.id,{notes:v})}/></td>
                     <td style={{minWidth:160}}><EditableCell value={k.address} onChange={v => handleUpdate(k.id,{address:v})}/></td>
                     <td style={{minWidth:190}}><EditableCell value={k.bankAccount} onChange={v => handleUpdate(k.id,{bankAccount:v})}/></td>
-                    <td style={{textAlign:'center',verticalAlign:'middle'}}>
-                      <input type="checkbox" checked={!!k.approved} onChange={e => db.collection(collection).doc(k.id).update({approved: e.target.checked})}
-                        style={{width:18,height:18,cursor:'pointer',accentColor:'var(--success)'}}/>
-                    </td>
                     <td><button className="btn btn-danger btn-sm btn-icon" onClick={() => handleDelete(k.id)}>&#128465;</button></td>
                   </tr>
                 ))}
