@@ -1127,7 +1127,7 @@ function KOCPanel({ collection, currency }) {
                   <th style={{width:36}}>#</th>
                   <th>Tên</th><th>Link IG</th><th>Gmail</th><th>Link bài</th>
                   <th>Trạng thái</th><th>Báo giá ({currency})</th><th>Ghi chú</th>
-                  <th>Địa chỉ</th><th>Số TK</th><th>Hợp đồng</th><th>Liên hệ cuối</th><th></th>
+                  <th>Địa chỉ</th><th>Số TK</th><th style={{textAlign:'center'}}>Duyệt</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -1151,10 +1151,10 @@ function KOCPanel({ collection, currency }) {
                     <td style={{minWidth:120}}><EditableCell value={k.notes} onChange={v => handleUpdate(k.id,{notes:v})}/></td>
                     <td style={{minWidth:160}}><EditableCell value={k.address} onChange={v => handleUpdate(k.id,{address:v})}/></td>
                     <td style={{minWidth:190}}><EditableCell value={k.bankAccount} onChange={v => handleUpdate(k.id,{bankAccount:v})}/></td>
-                    <td style={{minWidth:100}}>
-                      <ContractLinkCell value={k.contractLink||''} onChange={v => db.collection(collection).doc(k.id).update({contractLink:v})}/>
+                    <td style={{textAlign:'center',verticalAlign:'middle'}}>
+                      <input type="checkbox" checked={!!k.approved} onChange={e => db.collection(collection).doc(k.id).update({approved: e.target.checked})}
+                        style={{width:18,height:18,cursor:'pointer',accentColor:'var(--success)'}}/>
                     </td>
-                    <td style={{whiteSpace:'nowrap',fontSize:12,color:'var(--text-secondary)'}}>{k.lastContact||'&#8211;'}</td>
                     <td><button className="btn btn-danger btn-sm btn-icon" onClick={() => handleDelete(k.id)}>&#128465;</button></td>
                   </tr>
                 ))}
