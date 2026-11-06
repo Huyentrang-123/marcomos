@@ -1126,8 +1126,8 @@ function KOCPanel({ collection, currency }) {
                 <tr>
                   <th style={{width:36}}>#</th>
                   <th>Tên</th><th style={{width:100}}>Link IG</th><th>Gmail</th><th>Link bài</th>
-                  <th style={{textAlign:'center'}}>Duyệt</th>
                   <th>Trạng thái</th><th>Báo giá ({currency})</th><th>Ghi chú</th>
+                  <th style={{textAlign:'center'}}>Duyệt</th>
                   <th>Địa chỉ</th><th>Số TK</th><th></th>
                 </tr>
               </thead>
@@ -1147,13 +1147,13 @@ function KOCPanel({ collection, currency }) {
                     <td style={{minWidth:160}}>
                       <MultiLinkCell value={k.followers} onChange={v => handleUpdate(k.id,{followers:v})}/>
                     </td>
+                    <td style={{minWidth:110}}><KOCStatusCell value={k.status} onChange={v => handleUpdate(k.id,{status:v})}/></td>
+                    <td style={{minWidth:90}}><EditableCell value={k.price} onChange={v => handleUpdate(k.id,{price:v})}/></td>
+                    <td style={{minWidth:120}}><EditableCell value={k.notes} onChange={v => handleUpdate(k.id,{notes:v})}/></td>
                     <td style={{textAlign:'center',verticalAlign:'middle'}}>
                       <input type="checkbox" checked={!!k.approved} onChange={e => db.collection(collection).doc(k.id).update({approved: e.target.checked})}
                         style={{width:18,height:18,cursor:'pointer',accentColor:'var(--success)'}}/>
                     </td>
-                    <td style={{minWidth:110}}><KOCStatusCell value={k.status} onChange={v => handleUpdate(k.id,{status:v})}/></td>
-                    <td style={{minWidth:90}}><EditableCell value={k.price} onChange={v => handleUpdate(k.id,{price:v})}/></td>
-                    <td style={{minWidth:120}}><EditableCell value={k.notes} onChange={v => handleUpdate(k.id,{notes:v})}/></td>
                     <td style={{minWidth:160}}><EditableCell value={k.address} onChange={v => handleUpdate(k.id,{address:v})}/></td>
                     <td style={{minWidth:190}}><EditableCell value={k.bankAccount} onChange={v => handleUpdate(k.id,{bankAccount:v})}/></td>
                     <td><button className="btn btn-danger btn-sm btn-icon" onClick={() => handleDelete(k.id)}>&#128465;</button></td>
