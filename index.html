@@ -1172,7 +1172,7 @@ function KOCDatabaseTab() {
   const [activeGroup, setActiveGroup] = useLocalStorage('marcomos_koc_group', 'tw');
   const groups = [
     { id: 'tw', icon: '🇹🇼', label: 'KOC Đài Loan', collection: 'kocs',      currency: 'TWD' },
-    { id: 'id', icon: '🇮🇩', label: 'KOC Indonesia', collection: 'kocs_indo', currency: 'IDR' },
+    { id: 'id', icon: '🇮🇩', label: 'KOC Indonesia', collection: 'kocs_indo', currency: 'TWD' },
     { id: 'my', icon: '🇲🇾', label: 'KOC Malaysia',   collection: 'kocs_my',   currency: 'MYR' },
   ];
   const active = groups.find(g => g.id === activeGroup) || groups[0];
