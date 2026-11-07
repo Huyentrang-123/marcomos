@@ -390,14 +390,16 @@
       font-weight: 600;
       white-space: nowrap;
     }
-    .koc-badge-guimail      { background: var(--warning-light); color: var(--warning-text); }
-    .koc-badge-nhanting     { background: var(--pink-light);    color: var(--pink-text); }
-    .koc-badge-dangtrao     { background: var(--accent-light);  color: var(--accent); }
-    .koc-badge-dongyhoptac  { background: #dcfce7; color: #15803d; border: 1.5px solid #16a34a; font-size: 12px; font-weight: 700; }
+    .koc-badge-chualienhé   { background: #fef9c3; color: #854d0e; border: 1.5px solid #ca8a04; }
+    [data-theme="dark"] .koc-badge-chualienhé { background: #422006; color: #fde047; border-color: #ca8a04; }
+    .koc-badge-guimail      { background: var(--warning-light); color: var(--warning-text); border: 1.5px solid var(--warning-text); }
+    .koc-badge-nhanting     { background: var(--pink-light);    color: var(--pink-text);    border: 1.5px solid var(--pink-text); }
+    .koc-badge-dangtrao     { background: var(--accent-light);  color: var(--accent);       border: 1.5px solid var(--accent); }
+    .koc-badge-dongyhoptac  { background: #dcfce7; color: #15803d; border: 1.5px solid #16a34a; font-weight: 700; }
     [data-theme="dark"] .koc-badge-dongyhoptac { background: #14532d; color: #4ade80; border-color: #16a34a; }
-    .koc-badge-daxong       { background: #dbeafe; color: #1d4ed8; border: 1.5px solid #2563eb; font-size: 12px; font-weight: 700; }
+    .koc-badge-daxong       { background: #dbeafe; color: #1d4ed8; border: 1.5px solid #2563eb; font-weight: 700; }
     [data-theme="dark"] .koc-badge-daxong { background: #1e3a5f; color: #60a5fa; border-color: #2563eb; }
-    .koc-badge-khonghop     { background: var(--surface-3);     color: var(--text-secondary); }
+    .koc-badge-khonghop     { background: var(--surface-3); color: var(--text-secondary); border: 1.5px solid var(--border); }
 
     .translation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     @media (max-width: 768px) { .translation-grid { grid-template-columns: 1fr; } }
@@ -499,6 +501,7 @@ const formatDT = (iso) => {
 const KOC_STATUSES = ['Chưa liên hệ', 'Gửi mail', 'Nhắn tin IG', 'Đang trao đổi', 'Đồng ý hợp tác', 'Đã xong', 'Không hợp tác'];
 
 function kocBadgeClass(status) {
+  if (status === 'Chưa liên hệ')     return 'koc-badge koc-badge-chualienhé';
   if (status === 'Gửi mail')          return 'koc-badge koc-badge-guimail';
   if (status === 'Nhắn tin IG')       return 'koc-badge koc-badge-nhanting';
   if (status === 'Đang trao đổi')     return 'koc-badge koc-badge-dangtrao';
